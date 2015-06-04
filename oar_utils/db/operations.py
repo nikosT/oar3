@@ -35,7 +35,6 @@ JOBS_TABLES = [
     {'event_logs': 'job_id'},
     {'frag_jobs': 'frag_id_job'},
     {'job_dependencies': 'job_id'},
-    {'job_dependencies': 'job_id_required'},
     {'job_state_logs': 'job_id'},
     {'job_types': 'job_id'},
     {'jobs': 'job_id'},
@@ -63,7 +62,7 @@ RESOURCES_TABLES = [
     {'gantt_jobs_resources_visu': 'resource_id'},
 ]
 
-jobs_table = [list(d.keys())[0] for d in JOBS_TABLES]
+jobs_tables = [list(d.keys())[0] for d in JOBS_TABLES]
 moldable_jobs_tables = [list(d.keys())[0] for d in MOLDABLE_JOBS_TABLES]
 resources_tables = [list(d.keys())[0] for d in RESOURCES_TABLES]
 
@@ -80,7 +79,7 @@ get_resources_columns = partial(get_table_columns, RESOURCES_TABLES)
 def get_jobs_sync_criteria(ctx, table):
     # prepare query
     criteria = []
-    if table.name in jobs_table:
+    if table.name in jobs_tables:
         for column_name in get_jobs_columns(table.name):
             column = table.c.get(column_name)
             criteria.append(column < ctx.max_job_to_sync)
@@ -264,6 +263,7 @@ def delete_from_table(ctx, table, raw_conn, criteria=[], message=None):
     count = raw_conn.execute(delete_query).rowcount
     ctx.log(magenta('\r\033[2K delete') + ' ~> table %s (%s)' % (table.name,
                                                                  blue(count)))
+    return count
 
 
 def delete_orphan(ctx, p_table, p_key, f_table, f_key, raw_conn, message=None):
@@ -281,6 +281,7 @@ WHERE b.{p_key} IS NULL
     count = raw_conn.execute(raw_query).rowcount
     ctx.log(magenta('\r\033[2K delete') + ' ~> table %s (%s)' % (f_table,
                                                                  blue(count)))
+    return count
 
 
 def copy_table(ctx, table, raw_conn, criteria=[]):
@@ -368,12 +369,22 @@ class NotSupportedDatabase(Exception):
     pass
 
 
+def purge_jobs(ctx, raw_conn, table):
+    message = "Purge old %s from database :" % table.name
+    criteria = get_jobs_sync_criteria(ctx, table)
+    if criteria:
+        return delete_from_table(ctx, table, raw_conn, criteria, message)
+    else:
+        return 0
+
+
 def purge_db(ctx):
     # prepare the connection
     db = ctx.current_db
     raw_conn = db.engine.connect()
     inspector = Inspector.from_engine(db.engine)
     tables = [reflect_table(db, name) for name in inspector.get_table_names()]
+    tables_dict = dict(((t.name, t) for t in tables))
     change = False
     rv = None
     message = "Purge old resources from database :"
@@ -386,15 +397,27 @@ def purge_db(ctx):
                     message = None
                 if not change and rv is not None:
                     change = True
-    message = "Purge old jobs from database :"
-    for table in tables:
-        criteria = get_jobs_sync_criteria(ctx, table)
-        if criteria:
-            rv = delete_from_table(ctx, table, raw_conn, criteria, message)
-            if message is not None:
-                message = None
-            if not change and rv is not None:
-                change = True
+    jobs_table = tables_dict["jobs"]
+    count = purge_jobs(ctx, raw_conn, jobs_table)
+    for table_name in jobs_tables:
+        if table.name == jobs_table.name:
+            continue
+        column = get_jobs_columns(table_name)[0]
+        count += delete_orphan(ctx,
+                               jobs_table.name, "job_id",
+                               table_name, column,
+                               raw_conn, message)
+
+    moldable_jobs_table = tables_dict["moldable_job_descriptions"]
+    count += purge_jobs(ctx, raw_conn, moldable_jobs_table)
+    for table_name in moldable_jobs_tables:
+        if table.name == moldable_jobs_table.name:
+            continue
+        column = get_moldables_columns(table_name)[0]
+        count += delete_orphan(ctx,
+                               moldable_jobs_table.name, "moldable_job_id",
+                               table_name, column,
+                               raw_conn, message)
     # Purge events
     message = "Purge orphan events from database :"
     rv = delete_orphan(ctx,
