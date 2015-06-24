@@ -48,6 +48,7 @@ setup(
     ],
     entry_points='''
     [console_scripts]
+    oar-database-create=oar_cli.db.commands.create:cli
     oar-database-migrate=oar_cli.db.commands.migrate:cli
     oar-database-archive=oar_cli.db.commands.archive:cli
     ''',
