@@ -56,7 +56,8 @@ pass_context = make_pass_decorator(MigrationContext)
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-c', '--conf', callback=load_configuration_file,
-              type=click.Path(writable=False, readable=False),
+              type=click.Path(writable=False, readable=False, exists=True,
+                              file_okay=True, resolve_path=True),
               help="Use a different OAR configuration file.", required=False,
               default=config.DEFAULT_CONFIG_FILE, show_default=True)
 @click.option('--data-only', is_flag=True, default=False,
