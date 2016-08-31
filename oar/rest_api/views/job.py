@@ -58,9 +58,12 @@ def resources(job_id, offset, limit):
 
 
 @app.route('/<int:job_id>', methods=['GET'])
+@app.route('/<any(details, table):detailed>', methods=['GET'])
 def show(job_id):
     job = db.query(Job).get_or_404(job_id)
     g.data.update(job.asdict())
+    if detailed:
+        g.data['pouet'] = "pouet"
     attach_links(g.data)
 
 
