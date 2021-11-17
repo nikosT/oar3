@@ -196,6 +196,7 @@ class BipBip(object):
         if (
             ("deploy" not in job_types.keys())
             and ("cosystem" not in job_types.keys())
+            and ("envelop" not in job_types.keys())
             and (len(hosts) > 0)
         ):
             bad = []
@@ -407,6 +408,8 @@ class BipBip(object):
             head_node = config["COSYSTEM_HOSTNAME"]
         elif "deploy" in job_types.keys():
             head_node = config["DEPLOY_HOSTNAME"]
+        elif "envelop" in job_types.keys():
+            head_node = config["ENVELOP_HOSTNAME"]
 
         almighty_hostname = config["SERVER_HOSTNAME"]
         if re.match(r"\s*localhost.*$", almighty_hostname) or re.match(
@@ -423,6 +426,7 @@ class BipBip(object):
             cpuset_full_path
             and ("cosystem" not in job_types.keys())
             and ("deploy" not in job_types.keys())
+            and ("envelop" not in job_types.keys())
             and (len(hosts) > 0)
         ):
             # So oarexec will retry several times to contact Almighty until it will be
