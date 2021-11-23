@@ -69,7 +69,6 @@ def connect_job(job_id, stop_oarexec, openssh_cmd, cmd_ret):
             cmd_ret.exit(17)
 
         hosts = get_job_current_hostnames(job_id)
-        host_to_connect_via_ssh = hosts[0]
 
         # Deploy, cosystem and no host part
         if "cosystem" in types or not hosts:
@@ -78,6 +77,8 @@ def connect_job(job_id, stop_oarexec, openssh_cmd, cmd_ret):
             host_to_connect_via_ssh = config["DEPLOY_HOSTNAME"]
         elif "envelop" in types:
             host_to_connect_via_ssh = config["ENVELOP_HOSTNAME"]
+        else:
+            host_to_connect_via_ssh = hosts[0]
 
         # cpuset part
         cpuset_field = config["JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"]
