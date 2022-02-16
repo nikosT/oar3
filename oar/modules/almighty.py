@@ -44,6 +44,7 @@ logger.info("Start Almighty")
 # TODO
 # send_log_by_email("Start OAR server","[Almighty] Start Almighty");
 
+
 if "OARDIR" in os.environ:
     binpath = os.environ["OARDIR"]
 else:
@@ -53,15 +54,15 @@ else:
     )
     os.environ["OARDIR"] = binpath
 
-meta_sched_command = config["META_SCHED_CMD"]
+meta_sched_command = "/bin/true"
 m = re.match(r"^\/", meta_sched_command)
 if not m:
     meta_sched_command = os.path.join(binpath, meta_sched_command)
 
 leon_command = os.path.join(binpath, "oar-leon")
-check_for_villains_command = os.path.join(binpath, "oar-sarko")
-check_for_node_changes = os.path.join(binpath, "oar-finaud")
-nodeChangeState_command = os.path.join(binpath, "oar-node-change-state")
+check_for_villains_command = "/bin/true"
+check_for_node_changes = "/bin/true"
+nodeChangeState_command = "/bin/true"
 
 # Legacy OAR2
 # leon_command = binpath + 'Leon'
@@ -72,7 +73,7 @@ nodeChangeState_command = os.path.join(binpath, "oar-node-change-state")
 
 proxy_appendice_command = os.path.join(binpath, "oar-appendice-proxy")
 bipbip_commander = os.path.join(binpath, "oar-bipbip-commander")
-hulot_command = os.path.join(binpath, "oar-hulot")
+hulot_command = "/bin/true"
 
 # This timeout is used to slowdown the main automaton when the
 # command queue is empty, it correspond to a blocking read of
