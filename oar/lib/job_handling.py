@@ -2777,7 +2777,7 @@ def change_walltime(job_id, new_walltime, message):
 
 
 # TODO: add test
-def get_jids_with_type(like_str):
+def get_jobs_with_type(like_str):
     """
     Return the ids of the job with the type matching the string given in parameter.
 
@@ -2786,4 +2786,7 @@ def get_jids_with_type(like_str):
     :return: \
         A list of jobs
     """
-    return db.query(JobType).filter(JobType.type.like(like_str)).all()
+    return map(
+        lambda job: get_job(job.id),
+        db.query(JobType).filter(JobType.type.like(like_str)).all(),
+    )
