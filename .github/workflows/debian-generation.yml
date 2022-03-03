@@ -21,6 +21,8 @@ jobs:
         - name: Generate the debian packages
           run: cd ./misc/deb-gen && ./build-deb.sh
         # Upload artifact
+        - name: [debug] generated files
+          run: tree misc
         - uses: actions/upload-artifact@v2
           with:
             name: debian-packages
