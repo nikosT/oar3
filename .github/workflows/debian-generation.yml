@@ -36,7 +36,7 @@ jobs:
           uses: actions/checkout@v2
         - uses: actions/download-artifact@v3
           with:
-            name: debian-packages
+            name: debian-packages.tar.gz
         - name: debug
           run: tree
         - name: Release
