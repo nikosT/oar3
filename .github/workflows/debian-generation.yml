@@ -1,0 +1,21 @@
+name: OAR3 - generates debian packages
+on:
+  push:
+    branches:
+      - "release-ci"
+    tags
+
+jobs:
+    Run-Tests-On-Docker:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Check out repository code
+          uses: actions/checkout@v2
+          # Connect to docker to have user-base docker rate limit instead of by ip
+        - name: Connect to dockerhub
+          run: echo $DOCKERTOKEN | docker login --username ${DOCKERUSER} --password-stdin
+          env:
+            DOCKERUSER: ${{ secrets.DOCKERUSER }}
+            DOCKERTOKEN: ${{ secrets.DOCKERTOKEN }}
+        - name: Generate the debian packages
+          run: ./mis/deb-gen && ./build-deb.sh
