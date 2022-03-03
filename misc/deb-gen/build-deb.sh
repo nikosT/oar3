@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eux
+
 : ${GIT_CLONE:=1}
 : ${GIT_REMOTE_CLONE:=0}
 : ${BRANCH_NAME:="debian/3.0"}
