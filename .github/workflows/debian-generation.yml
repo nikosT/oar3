@@ -20,3 +20,8 @@ jobs:
             DOCKERTOKEN: ${{ secrets.DOCKERTOKEN }}
         - name: Generate the debian packages
           run: cd ./misc/deb-gen && ./build-deb.sh
+        # Upload artifact
+        - uses: actions/upload-artifact@v2
+          with:
+            name: debian-packages
+            path: ./misc/deb-gen/build/*.deb
