@@ -7,7 +7,7 @@ on:
       - .*
 
 jobs:
-    Run-Tests-On-Docker:
+    Generate-debian-packages:
       runs-on: ubuntu-latest
       steps:
         - name: Check out repository code
