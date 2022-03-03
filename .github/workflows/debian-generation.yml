@@ -20,12 +20,6 @@ jobs:
           env:
             DOCKERUSER: ${{ secrets.DOCKERUSER }}
             DOCKERTOKEN: ${{ secrets.DOCKERTOKEN }}
-        - name: Clone debian's branch of oar
-          uses: actions/checkout@v2
-          with:
-            repository: oar-team/oar3
-            path: misc/deb-gen/build/oar3
-            ref: debian/3.0"
         - name: Generate the debian packages
           run: cd ./misc/deb-gen && ./build-deb.sh
         - name: Create a compressed archive
