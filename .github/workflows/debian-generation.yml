@@ -19,4 +19,4 @@ jobs:
             DOCKERUSER: ${{ secrets.DOCKERUSER }}
             DOCKERTOKEN: ${{ secrets.DOCKERTOKEN }}
         - name: Generate the debian packages
-          run: ./mis/deb-gen && ./build-deb.sh
+          run: ./misc/deb-gen && ./build-deb.sh
