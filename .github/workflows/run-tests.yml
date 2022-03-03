@@ -1,5 +1,5 @@
 name: OAR3 - run tests
-on: [push]
+on: [push, workflow_call]
 jobs:
     Check-Code-Formatting:
       runs-on: ubuntu-latest
