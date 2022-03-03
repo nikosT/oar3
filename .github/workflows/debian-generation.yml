@@ -12,7 +12,6 @@ jobs:
       steps:
         - name: Check out repository code
           uses: actions/checkout@v2
-          # Connect to docker to have user-base docker rate limit instead of by ip
         - name: Connect to dockerhub
           run: echo $DOCKERTOKEN | docker login --username ${DOCKERUSER} --password-stdin
           env:
