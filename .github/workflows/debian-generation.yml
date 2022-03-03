@@ -8,8 +8,6 @@ on:
 
 jobs:
     Generate-debian-packages:
-      env:
-        OUTPUT: debian-packages.tar.gz
       runs-on: ubuntu-latest
       steps:
         - name: Check out repository code
@@ -22,9 +20,10 @@ jobs:
             DOCKERTOKEN: ${{ secrets.DOCKERTOKEN }}
         - name: Generate the debian packages
           run: cd ./misc/deb-gen && ./build-deb.sh
-        - name: Create a compressed archive
-          run: tar -czf ${{ env.OUTPUT }}  misc/deb-gen/build/*.deb
+        # Upload artifact
+        - name: generated files
+          run: tree misc
         - uses: actions/upload-artifact@v2
           with:
-            name: ${{ env.OUTPUT }}
-            path: ${{ env.OUTPUT }}
+            name: debian-packages
+            path: ./misc/deb-gen/build/**.deb
