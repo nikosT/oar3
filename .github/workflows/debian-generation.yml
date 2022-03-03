@@ -8,6 +8,8 @@ on:
 
 jobs:
     Generate-debian-packages:
+      env:
+        OUTPUT: debian-packages.tar.gz
       runs-on: ubuntu-latest
       steps:
         - name: Check out repository code
@@ -18,12 +20,17 @@ jobs:
           env:
             DOCKERUSER: ${{ secrets.DOCKERUSER }}
             DOCKERTOKEN: ${{ secrets.DOCKERTOKEN }}
+        - name: Clone debian's branch of oar
+          uses: actions/checkout@v2
+          with:
+            repository: oar-team/oar3
+            path: misc/deb-gen/build/oar3
+            ref: debian/3.0"
         - name: Generate the debian packages
           run: cd ./misc/deb-gen && ./build-deb.sh
-        # Upload artifact
-        - name: generated files
-          run: tree misc
+        - name: Create a compressed archive
+          run: tar -czf ${{ env.OUTPUT }}  misc/deb-gen/build/*.deb
         - uses: actions/upload-artifact@v2
           with:
-            name: debian-packages
-            path: ./misc/deb-gen/build/**.deb
+            name: ${{ env.OUTPUT }}
+            path: ${{ env.OUTPUT }}
