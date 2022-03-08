@@ -54,26 +54,45 @@ else:
     )
     os.environ["OARDIR"] = binpath
 
-meta_sched_command = "/bin/true"
+meta_sched_command = config["META_SCHED_CMD"]
 m = re.match(r"^\/", meta_sched_command)
 if not m:
     meta_sched_command = os.path.join(binpath, meta_sched_command)
 
-leon_command = os.path.join(binpath, "oar-leon")
-check_for_villains_command = "/bin/true"
-check_for_node_changes = "/bin/true"
-nodeChangeState_command = "/bin/true"
+if "LEON_COMMAND" in config:
+    leon_command = config["LEON_COMMAND"]
+else:
+    leon_command = os.path.join(binpath, "oar-leon")
 
-# Legacy OAR2
-# leon_command = binpath + 'Leon'
-# check_for_villains_command = binpath + 'sarko'
-# check_for_node_changes = binpath + 'finaud'
-# nodeChangeState_command = binpath + 'NodeChangeState'
-# nodeChangeState_command = 'true'
+if "CHECK_FOR_VILLAINS_COMMAND" in config:
+    check_for_villains_command = config["CHECK_FOR_VILLAINS_COMMAND"]
+else:
+    check_for_villains_command = os.path.join(binpath, "oar-sarko")
 
-proxy_appendice_command = os.path.join(binpath, "oar-appendice-proxy")
-bipbip_commander = os.path.join(binpath, "oar-bipbip-commander")
-hulot_command = "/bin/true"
+if "CHECK_FOR_NODE_CHANGES_COMMAND" in config:
+    check_for_node_changes = config["CHECK_FOR_NODE_CHANGES_COMMAND"]
+else:
+    check_for_node_changes = os.path.join(binpath, "oar-finaud")
+
+if "NODE_CHANGE_STATE_COMMAND" in config:
+    nodeChangeState_command = config["NODE_CHANGE_STATE_COMMAND"]
+else:
+    nodeChangeState_command = os.path.join(binpath, "oar-node-change-state")
+
+if "PROXY_APPENDICE_COMMAND" in config:
+    proxy_appendice_command = config["PROXY_APPENDICE_COMMAND"]
+else:
+    proxy_appendice_command = os.path.join(binpath, "oar-appendice-proxy")
+
+if "BIPBIP_COMMANDER_COMMAND" in config:
+    bipbip_commander = config["BIPBIP_COMMANDER_COMMAND"]
+else:
+    bipbip_commander = os.path.join(binpath, "oar-bipbip-commander")
+
+if "HULOT_COMMAND" in config:
+    hulot_command = config["HULOT_COMMAND"]
+else:
+    hulot_command = os.path.join(binpath, "oar-hulot")
 
 # This timeout is used to slowdown the main automaton when the
 # command queue is empty, it correspond to a blocking read of
