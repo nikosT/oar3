@@ -48,59 +48,72 @@ ______________________________
 
 **Instructions**
 
-*For RedHat like systems*::
+*For the Debian like systems*
 
-        # OAR provides a Yum repository.
-        # For more information see: http://oar.imag.fr/download#rpms
+.. note::
+        OAR3 is not shipped in the official distribution. The packages can be found at : https://github.com/oar-team/oar3/releases/latest.
+        Also download the debian package for `ProcSet <https://gitlab.inria.fr/bleuse/procset.py>`_ (which is an OAR3 dependency).
 
-        # Install OAR node
-        yum --enablerepo=OAR install oar-node
+*First install OAR3 dependencies*::
 
-*For the Debian like systems*::
+        apt-get update && \
+        apt-get install -y python3 \
+        python3-sqlalchemy python3-alembic \
+        python3-click python3-flask \
+        python3-passlib python3-psutil python3-requests \
+        python3-simplejson python3-sqlalchemy-utils  \
+        python3-tabulate python3-toml python3-yaml \
+        python3-zmq python3-psycopg2 python3-fastapi
 
-        # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
-        # For more info see: http://oar.imag.fr/download#debian
+        # Install procset
+        dpkg -i <path-to-procset>.deb
 
-        # Install OAR node
-        apt-get install oar-node
+        # Then install oar node package
+        dpkg -i oar-node.deb
 
-Installation from the tarball
-_____________________________
+Installation from the tarball (sources)
+_______________________________________
 
 **Requirements**
 
-*For RedHat like systems*::
-
-          # Build dependencies
-          yum install gcc make tar python-docutils
-
-          # Common dependencies
-          yum install Perl Perl-base openssh
+.. todo::
+        Filter dependencies, as it is directly copied from oar-docker-compose
 
 *For Debian like system*::
 
-          # Build dependencies
-          apt-get install gcc make tar python-docutils
-
-          # Common dependencies
-          apt-get install perl perl-base openssh-client openssh-server
+        # Build dependencies
+        apt-get update \
+        && apt-get install -y systemd systemd-sysv \
+        vim bash-completion apt-transport-https \
+        ca-certificates psmisc openssh-client curl wget iptables socat pciutils \
+        nmap locales net-tools iproute2 net-tools perl perl-base \
+        taktuk libdbi-perl libsort-versions-perl libdbd-pg-perl\
+        make gcc \
+        postgresql-client inetutils-ping git tmux openssh-server netcat \
+        procps libdatetime-perl libterm-ui-perl rsync socat \
+        python3 python3-dev python3-pip python3-psycopg2 \
+        inotify-tools \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 **Instructions**
 
 Get the sources::
 
-        OAR_VERSION=2.5.4
-        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
-        cd oar-${OAR_VERSION}/
+        export OAR_VERSION=3.0.0.dev5
+        wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
+        cd oar3-${OAR_VERSION}
 
 build/install/setup::
 
         # build
-        make node-build
+        make PREFIX=/usr/local node-build
+
         # install
-        make node-install
+        make PREFIX=/usr/local node-install
+
         # setup
-        make node-setup
+        make PREFIX=/usr/local node-setup
 
 
 Configuration
@@ -112,7 +125,7 @@ Init.d scripts
 If you have installed OAR from sources, you need to become root user and
 install manually the {init.d,default,sysconfig} scripts present in the folders::
 
-    $PREFIX/share/doc/oar-node/examples/scripts/{init.d,default,sysconfig}
+    $PREFIX/share/oar/oar-node/{init.d,default,sysconfig}/oar-node
 
 Then you just need to use the script ``/etc/init.d/oar-node`` to start
 the SSH daemon dedicated to oar-node.
