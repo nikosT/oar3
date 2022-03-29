@@ -209,6 +209,24 @@ _____________
 The oar database
 ~~~~~~~~~~~~~~~~
 
+**Install the perl dependencies for the database management tool**::
+
+        apt-get install libdbi-perl perl perl-base libsort-versions-perl libdbd-pg-perl libdatetime-perl libterm-ui-perl
+
+**Install and create the database (postgresql)**::
+
+        apt-get update && \
+        apt-get install -y postgresql libpq-dev postgresql-contrib libjson-perl && \
+        apt-get clean
+
+        # Configure the database
+        postgresql_main=$(find /etc/postgresql -name "main") \
+        && sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" ${postgresql_main}/postgresql.conf \
+        && echo "host all all 0.0.0.0/0 md5" >> ${postgresql_main}/pg_hba.conf
+
+        systemctl enable postgresql
+        # Reboot or use systemctl start postgresql
+
 Define the database configuration in /etc/oar/oar.conf. You need to set the
 variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN,
 DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
@@ -465,7 +483,7 @@ OAR uses SSH to connect from machine to machine (e.g. from server or frontend to
 nodes or from nodes to nodes), using a dedicated SSH daemon usually running on
 port 6667.
 
-Upon installtion of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the frontend (if not the same machine).
+Upon installation of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the frontend (if not the same machine).
 
 Please note that public key in the authorized_keys file must be prefixed with ``environment="OAR_KEY=1"``, e.g.::
 
