@@ -68,34 +68,17 @@ ______________________________
         dpkg -i <path-to-procset>.deb
 
         # Then install oar node package along with its dependencies
-        dpkg -i python3-oar_*.deb oar-common_*.deb oar-server_*.deb
+        dpkg -i python3-oar_*.deb oar-common_*.deb oar-node_*.deb
 
 Installation from the tarball (sources)
 _______________________________________
 
-**Requirements**
-
-.. todo::
-        Filter dependencies, as it is directly copied from oar-docker-compose
-
-*For Debian like system*::
-
-        # Build dependencies
-        apt-get update \
-        && apt-get install -y systemd systemd-sysv \
-        vim bash-completion apt-transport-https \
-        ca-certificates psmisc openssh-client curl wget iptables socat pciutils \
-        nmap locales net-tools iproute2 net-tools perl perl-base \
-        taktuk libdbi-perl libsort-versions-perl libdbd-pg-perl\
-        make gcc \
-        postgresql-client inetutils-ping git tmux openssh-server netcat \
-        procps libdatetime-perl libterm-ui-perl rsync socat \
-        python3 python3-dev python3-pip python3-psycopg2 \
-        inotify-tools \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 **Instructions**
+
+dependencies:
+        - make
+        - perl (pod2man)
+        - gcc
 
 Get the sources::
 
@@ -136,13 +119,13 @@ OAR uses SSH to connect from machine to machine (e.g. from server or frontend to
 nodes or from nodes to nodes), using a dedicated SSH daemon usually running on
 port 6667.
 
-Upon installtion of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the nodes.
+Upon installation of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the nodes.
 
 Please note that public key in the authorized_keys file must be prefixed with ``environment="OAR_KEY=1"``, e.g.::
 
       environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2[...]6mIcqvcwG1K7V6CHLQKHKWo/ root@server
 
-Also please make sure that the ``/var/lib/oar/.ssh`` directory and contained files have the right ownership (oar.oar) and permissions for SSH to function. 
+Also please make sure that the ``/var/lib/oar/.ssh`` directory and contained files have the right ownership (oar.oar) and permissions for SSH to function.
 
 
 Server
@@ -153,11 +136,19 @@ ______________________________
 
 **Instructions**
 
-*For the Debian like systems*::
+*Dependencies for Debian like system*::
 
-        apt-get update && \
-        apt-get install -y python3 perl \
-        python3-sqlalchemy python3-alembic \
+        # Build dependencies
+        apt-get install gcc make tar python-docutils
+
+        # Common dependencies
+        apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl
+
+        # PostgreSQL dependencies
+        apt-get install postgresql postgresql-client libdbd-pg-perl
+
+        # Python3 dependencies
+        apt-get install python3 python3-sqlalchemy python3-alembic \
         python3-click python3-flask \
         python3-passlib python3-psutil python3-requests \
         python3-simplejson python3-sqlalchemy-utils  \
@@ -175,16 +166,20 @@ _____________________________
 
 **Requirements**
 
-*For Debian like system*::
+dependencies:
+        - make
+        - perl (pod2man)
+        - gcc
+        - python3 (with distutils package)
+        - postgres
+        - python3-dev (to build python extension)
+        - `poetry <https://python-poetry.org/docs/#installation>`_
+        - pip3
+        - libpq package
 
-          # Build dependencies
-          apt-get install gcc make tar python-docutils
+**On Debian you can use the following command**::
 
-          # Common dependencies
-          apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl
-
-          # PostgreSQL dependencies
-          apt-get install postgresql postgresql-client libdbd-pg-perl
+        apt update && apt install make perl python3 python3-dev python3-pip curl libpq-dev
 
 **Instructions**
 
@@ -194,14 +189,17 @@ Get the sources::
         wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar3-${OAR_VERSION}
 
+Install the python sources::
+        poetry build && pip install dist/*.whl
+
 Build/Install/Setup the OAR server::
 
         # build
-        make server-build
+        make PREFIX=/usr/local server-build
         # install
-        make server-install
+        make PREFIX=/usr/local server-install
         # setup
-        make server-setup
+        make PREFIX=/usr/local server-setup
 
 Configuration
 _____________
@@ -209,14 +207,10 @@ _____________
 The oar database
 ~~~~~~~~~~~~~~~~
 
-**Install the perl dependencies for the database management tool**::
-
-        apt-get install libdbi-perl perl perl-base libsort-versions-perl libdbd-pg-perl libdatetime-perl libterm-ui-perl
-
 **Install and create the database (postgresql)**::
 
         apt-get update && \
-        apt-get install -y postgresql libpq-dev postgresql-contrib libjson-perl && \
+        apt-get install -y postgresql postgresql-contrib libjson-perl && \
         apt-get clean
 
         # Configure the database
@@ -227,8 +221,13 @@ The oar database
         systemctl enable postgresql
         # Reboot or use systemctl start postgresql
 
+**Install the perl dependencies for the oar database management tool**::
+        # For debian system use
+        apt-get install libdbi-perl perl perl-base libsort-versions-perl libdbd-pg-perl libdatetime-perl libterm-ui-perl
+
+
 Define the database configuration in /etc/oar/oar.conf. You need to set the
-variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN,
+variables ``DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN,
 DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
 
         vi /etc/oar/oar.conf
@@ -426,42 +425,36 @@ _____________________________
 
 **Requirements**
 
-*For RedHat like systems*::
+- python3, pip, poetry and libpq-dev (to build psycopg2)
 
-          # Build dependencies
-          yum install gcc make tar python-docutils
+**On Debian you can use the following command**::
 
-          # Common dependencies
-          yum install Perl Perl-base openssh Perl-DBI
-
-          # MySQL dependencies
-          yum install mysql perl-DBD-MySQL
-
-          # PostgreSQL dependencies
-          yum install postgresql perl-DBD-Pg
-
+        apt update && apt install make perl python3 python3-dev python3-pip curl libpq-dev
 
 *For Debian like system*::
 
           # Build dependencies
-          apt-get install gcc make tar python-docutils
+          apt-get install gcc make tar curl python3
 
           # Common dependencies
           apt-get install perl perl-base openssh-client openssh-server libdbi-perl
-
-          # MySQL dependencies
-          apt-get install mysql-client libdbd-mysql-perl
 
           # PostgreSQL dependencies
           apt-get install postgresql-client libdbd-pg-perl
 
 **Instructions**
 
+On debian systems::
+
+
 Get the sources::
 
-        OAR_VERSION=2.5.4
-        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
-        cd oar-${OAR_VERSION}/
+        export OAR_VERSION=3.0.0.dev5
+        wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
+        cd oar3-${OAR_VERSION}
+
+Install the python sources::
+        poetry build && pip install dist/*.whl
 
 Build/Install/setup::
 
