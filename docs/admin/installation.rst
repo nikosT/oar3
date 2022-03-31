@@ -207,7 +207,7 @@ _____________
 The oar database
 ~~~~~~~~~~~~~~~~
 
-**Install and create the database (postgresql)**::
+**Install and create the database (postgresql) on debian you can install postgres with the following commands**::
 
         apt-get update && \
         apt-get install -y postgresql postgresql-contrib libjson-perl && \
@@ -617,6 +617,10 @@ _____________
 
 Visualization server
 --------------------
+
+.. warning::
+
+    This part has been written for OAR2, and hasn't been updated yet.
 
 Description
 ___________
