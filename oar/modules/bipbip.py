@@ -199,7 +199,7 @@ class BipBip(object):
             logger.debug(
                 "[" + str(job.id) + "] User: " + job.user + " Set NOOP job to Running"
             )
-            self.call_server_prologue(job)
+            self.call_server_prologue(Job)
             return
 
         # HERE we must launch oarexec on the first node
@@ -456,7 +456,7 @@ class BipBip(object):
                     return
             # end CHECK
 
-        self.call_server_prologue(job)
+        self.call_server_prologue(job, environ={"USER": job.user})
 
         # CALL OAREXEC ON THE FIRST NODE
         pro_epi_timeout = config["PROLOGUE_EPILOGUE_TIMEOUT"]
@@ -611,15 +611,15 @@ class BipBip(object):
             )
         return
 
-    def call_server_prologue(self, job):
+    def call_server_prologue(self, job, environ={}):
         # PROLOGUE EXECUTED ON OAR SERVER #
         # Script is executing with job id in arguments
         if self.server_prologue:
             timeout = config["SERVER_PROLOGUE_EPILOGUE_TIMEOUT"]
             cmd = [self.server_prologue, str(job.id)]
-
+            environ = os.environ | environ
             try:
-                child = tools.Popen(cmd)
+                child = tools.Popen(cmd, env=environ)
                 return_code = child.wait(timeout)
 
                 if return_code:
