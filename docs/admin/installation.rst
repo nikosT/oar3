@@ -12,11 +12,10 @@ Installation
 Overview
 --------
 
-There are currently 3 methods to install OAR:
+There are currently 2 methods to install OAR:
 
   - from the Debian packages
   - from sources
-
 
 Before going further, please have in mind OAR's architecture. A common OAR
 installation is composed of:
@@ -30,102 +29,11 @@ installation is composed of:
     visualisation webapps (monika, drawgantt, ...);
   - optionally an **API server**, which will host OAR restful API service.
 
-Many OAR data are stored and archived in a database: you have the choice to use
-either PostgreSQL or MySQL. We recommend using **PostgreSQL**.
-
+Many OAR data are stored and archived in a a postgresql database.
 
 Beside this documentation, please have a look at **OAR website**:
-http://oar.imag.fr, which also provides a lot of information, espacially in the
+http://oar.imag.fr, which also provides a lot of information, especially in the
 **Download** and **Contribs** sections.
-
-
-Computing nodes
----------------
-
-Installation from the packages
-______________________________
-
-**Instructions**
-
-*For the Debian like systems*
-
-.. note::
-        OAR3 is not shipped in the official distribution. The packages can be found at : https://github.com/oar-team/oar3/releases/latest.
-        Also download the debian package for `ProcSet <https://gitlab.inria.fr/bleuse/procset.py>`_ (which is an OAR3 dependency).
-
-*First install OAR3 dependencies*::
-
-        apt-get update && \
-        apt-get install -y python3 perl \
-        python3-sqlalchemy python3-alembic \
-        python3-click python3-flask \
-        python3-passlib python3-psutil python3-requests \
-        python3-simplejson python3-sqlalchemy-utils  \
-        python3-tabulate python3-toml python3-yaml \
-        python3-zmq python3-psycopg2 python3-fastapi
-
-        # Install procset
-        dpkg -i <path-to-procset>.deb
-
-        # Then install oar node package along with its dependencies
-        dpkg -i python3-oar_*.deb oar-common_*.deb oar-node_*.deb
-
-Installation from the tarball (sources)
-_______________________________________
-
-**Instructions**
-
-dependencies:
-        - make
-        - perl (pod2man)
-        - gcc
-
-Get the sources::
-
-        export OAR_VERSION=3.0.0.dev5
-        wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
-        cd oar3-${OAR_VERSION}
-
-build/install/setup::
-
-        # build
-        make PREFIX=/usr/local node-build
-
-        # install
-        make PREFIX=/usr/local node-install
-
-        # setup
-        make PREFIX=/usr/local node-setup
-
-
-Configuration
-_____________
-
-Init.d scripts
-~~~~~~~~~~~~~~
-
-If you have installed OAR from sources, you need to become root user and
-install manually the {init.d,default,sysconfig} scripts present in the folders::
-
-    $PREFIX/share/oar/oar-node/{init.d,default,sysconfig}/oar-node
-
-Then you just need to use the script ``/etc/init.d/oar-node`` to start
-the SSH daemon dedicated to oar-node.
-
-SSH setup
-~~~~~~~~~
-
-OAR uses SSH to connect from machine to machine (e.g. from server or frontend to
-nodes or from nodes to nodes), using a dedicated SSH daemon usually running on
-port 6667.
-
-Upon installation of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the nodes.
-
-Please note that public key in the authorized_keys file must be prefixed with ``environment="OAR_KEY=1"``, e.g.::
-
-      environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2[...]6mIcqvcwG1K7V6CHLQKHKWo/ root@server
-
-Also please make sure that the ``/var/lib/oar/.ssh`` directory and contained files have the right ownership (oar.oar) and permissions for SSH to function.
 
 
 Server
@@ -185,7 +93,7 @@ dependencies:
 
 Get the sources::
 
-        export OAR_VERSION=3.0.0.dev5
+        export OAR_VERSION=3.0.0.dev7
         wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar3-${OAR_VERSION}
 
@@ -449,7 +357,7 @@ On debian systems::
 
 Get the sources::
 
-        export OAR_VERSION=3.0.0.dev5
+        export OAR_VERSION=3.0.0.dev7
         wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar3-${OAR_VERSION}
 
@@ -504,6 +412,95 @@ must configure the SSH server on the frontends nodes with::
 
 With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node or "oarsh -X node12".
+
+Computing nodes
+---------------
+
+Installation from the packages
+______________________________
+
+**Instructions**
+
+*For the Debian like systems*
+
+.. note::
+        OAR3 is not shipped in the official distribution. The packages can be found at : https://github.com/oar-team/oar3/releases/latest.
+        Also download the debian package for `ProcSet <https://gitlab.inria.fr/bleuse/procset.py>`_ (which is an OAR3 dependency).
+
+*First install OAR3 dependencies*::
+
+        apt-get update && \
+        apt-get install -y python3 perl \
+        python3-sqlalchemy python3-alembic \
+        python3-click python3-flask \
+        python3-passlib python3-psutil python3-requests \
+        python3-simplejson python3-sqlalchemy-utils  \
+        python3-tabulate python3-toml python3-yaml \
+        python3-zmq python3-psycopg2 python3-fastapi
+
+        # Install procset
+        dpkg -i <path-to-procset>.deb
+
+        # Then install oar node package along with its dependencies
+        dpkg -i python3-oar_*.deb oar-common_*.deb oar-node_*.deb
+
+Installation from the tarball (sources)
+_______________________________________
+
+**Instructions**
+
+dependencies:
+        - make
+        - perl (pod2man)
+        - gcc
+
+Get the sources::
+
+        export OAR_VERSION=3.0.0.dev7
+        wget -O - https://github.com/oar-team/oar3/archive/refs/tags/${OAR_VERSION}.tar.gz | tar xzvf -
+        cd oar3-${OAR_VERSION}
+
+build/install/setup::
+
+        # build
+        make PREFIX=/usr/local node-build
+
+        # install
+        make PREFIX=/usr/local node-install
+
+        # setup
+        make PREFIX=/usr/local node-setup
+
+
+Configuration
+_____________
+
+Init.d scripts
+~~~~~~~~~~~~~~
+
+If you have installed OAR from sources, you need to become root user and
+install manually the {init.d,default,sysconfig} scripts present in the folders::
+
+    $PREFIX/share/oar/oar-node/{init.d,default,sysconfig}/oar-node
+
+Then you just need to use the script ``/etc/init.d/oar-node`` to start
+the SSH daemon dedicated to oar-node.
+
+SSH setup
+~~~~~~~~~
+
+OAR uses SSH to connect from machine to machine (e.g. from server or frontend to
+nodes or from nodes to nodes), using a dedicated SSH daemon usually running on
+port 6667.
+
+Upon installation of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the nodes.
+
+Please note that public key in the authorized_keys file must be prefixed with ``environment="OAR_KEY=1"``, e.g.::
+
+      environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2[...]6mIcqvcwG1K7V6CHLQKHKWo/ root@server
+
+Also please make sure that the ``/var/lib/oar/.ssh`` directory and contained files have the right ownership (oar.oar) and permissions for SSH to function.
+
 
 API server
 ----------
