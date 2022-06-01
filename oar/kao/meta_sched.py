@@ -53,7 +53,7 @@ from oar.lib.job_handling import (
     get_gantt_waiting_interactive_prediction_date,
     get_jobs_in_multiple_states,
     get_jobs_on_resuming_job_resources,
-    get_waiting_reservations_already_scheduled,
+    get_waiting_moldable_of_reservations_already_scheduled,
     get_waiting_scheduled_AR_jobs,
     is_timesharing_for_two_jobs,
     remove_gantt_resource_job,
@@ -120,10 +120,8 @@ def gantt_init_with_running_jobs(plt, initial_time_sec, job_security_time):
     initial_slot_set = SlotSet((resource_set.roid_itvs, initial_time_sec))
 
     logger.debug("Processing of processing of already handled reservations")
-    accepted_ar_jids, accepted_ar_jobs = get_waiting_reservations_already_scheduled(
-        resource_set, job_security_time
-    )
-    gantt_flush_tables(accepted_ar_jids)
+    moldable_ids = get_waiting_moldable_of_reservations_already_scheduled()
+    gantt_flush_tables(moldable_ids)
 
     # TODO Can we remove this step, below ???
     #  why don't use: assigned_resources and job start_time ??? in get_scheduled_jobs ???
@@ -437,13 +435,15 @@ def check_reservation_jobs(
                 logger.debug("[" + str(job.id) + "] advance reservation is validated")
                 job.moldable_id = moldable_id
                 job.res_set = itvs
+                job.walltime = walltime
                 ar_jobs_scheduled[job.id] = job
                 # if 'container' in job.types
                 #    slot = Slot(1, 0, 0, job.res_set[:], job.start_time,
                 #                job.start_time + job.walltime - job_security_time)
                 # slot.show()
                 #    slots_sets[job.id] = SlotSet(slot)
-
+                # Update the slotsets for the next AR to be scheduled within this loop
+                all_slot_sets[ss_name].split_slots(sid_left, sid_right, job)
                 set_job_state(job.id, "toAckReservation")
 
             set_job_resa_state(job.id, "Scheduled")
@@ -815,6 +815,16 @@ def meta_schedule(mode="internal", plt=Platform()):
 
     job_security_time = int(config["SCHEDULER_JOB_SECURITY_TIME"])
 
+    # Kill duration before starting jobs
+    # So we kill best effort job in advance to give the time to occupied resources
+    # to be in a good state
+    if "SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION" in config:
+        kill_duration_before_reservation = int(
+            config["SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION"]
+        )
+    else:
+        kill_duration_before_reservation = 0
+
     if ("QUOTAS" in config) and (config["QUOTAS"] == "yes"):
         Quotas.enable(plt.resource_set())
 
@@ -941,13 +951,27 @@ def meta_schedule(mode="internal", plt=Platform()):
                     queue.name, resource_set, job_security_time, current_time_sec
                 )
 
-    jobs_to_launch, jobs_to_launch_lst, rid2jid_to_launch = get_gantt_jobs_to_launch(
-        resource_set, job_security_time, current_time_sec
+    (
+        jobs_to_launch_with_security_time,
+        jobs_to_launch_with_security_time_lst,
+        rid2jid_to_launch,
+    ) = get_gantt_jobs_to_launch(
+        resource_set,
+        job_security_time,
+        current_time_sec,
+        kill_duration_before_reservation=kill_duration_before_reservation,
+    )
+
+    # Filter jobs that are not yet ready to be scheduled, but present because of the
+    # kill_duration_before_reservation=kill_duration_before_reservation parameter
+    jobs_to_launch_lst = filter(
+        lambda j: j.start_time <= current_time_sec,
+        jobs_to_launch_with_security_time_lst,
     )
 
     if (
         check_besteffort_jobs_to_kill(
-            jobs_to_launch,
+            jobs_to_launch_with_security_time,  # Jobs to launch or about to be launched
             rid2jid_to_launch,
             current_time_sec,
             besteffort_rid2jid,

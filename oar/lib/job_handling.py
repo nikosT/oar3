@@ -257,6 +257,7 @@ def get_data_jobs(jobs, jids, resource_set, job_security_time, besteffort_durati
     #            .join(JobResourceGroup)\
     #            .join(JobResourceDescription)\
 
+    logger.info(str(result))
     cache_constraints = {}
 
     first_job = True
@@ -290,8 +291,10 @@ def get_data_jobs(jobs, jids, resource_set, job_security_time, besteffort_durati
         #
         if j_id != prev_j_id:
             if first_job:
+                logger.info("First job")
                 first_job = False
             else:
+                logger.info("New job instance")
                 jrg.append((jr_descriptions, res_constraints))
                 mld_res_rqts.append((prev_mld_id, prev_mld_id_walltime, jrg))
                 job.mld_res_rqts = mld_res_rqts
@@ -321,7 +324,8 @@ def get_data_jobs(jobs, jids, resource_set, job_security_time, besteffort_durati
 
             if moldable_id != prev_mld_id:
                 if jrg != []:
-                    jrg.append((jr_descriptions, res_constraints))
+                    logger.info("Append resources (moldable instance)")
+                    #jrg.append((jr_descriptions, res_constraints))
                     mld_res_rqts.append((prev_mld_id, prev_mld_id_walltime, jrg))
 
                 prev_mld_id = moldable_id
@@ -334,16 +338,17 @@ def get_data_jobs(jobs, jids, resource_set, job_security_time, besteffort_durati
         #
         # new job resources groupe_id
         #
-        if jrg_id != prev_jrg_id:
-            prev_jrg_id = jrg_id
-            if jr_descriptions != []:
-                jrg.append((jr_descriptions, res_constraints))
-                jr_descriptions = []
+        #if jrg_id != prev_jrg_id:
+            #prev_jrg_id = jrg_id
+            #if jr_descriptions != []:
+                #jrg.append((jr_descriptions, res_constraints))
+                #jr_descriptions = []
 
         #
         # new set job descriptions
         #
         if res_jrg_id != prev_res_jrg_id:
+            logger.info("New resource descriptions")
             prev_res_jrg_id = res_jrg_id
             jr_descriptions = [(res_type, res_value)]
 
@@ -377,11 +382,21 @@ def get_data_jobs(jobs, jids, resource_set, job_security_time, besteffort_durati
                     cache_constraints[sql_constraints] = res_constraints
         else:
             # add next res_type , res_value
+            logger.info("Old resource descriptions")
             jr_descriptions.append((res_type, res_value))
 
+        if jrg_id != prev_jrg_id:
+            prev_jrg_id = jrg_id
+            if jr_descriptions != []:
+                logger.info("New resource group")
+                jrg.append((jr_descriptions, res_constraints))
+                #jr_descriptions = []
+
     # complete the last job
-    jrg.append((jr_descriptions, res_constraints))
+    #jrg.append((jr_descriptions, res_constraints))
+    logger.info(str(mld_res_rqts))
     mld_res_rqts.append((prev_mld_id, prev_mld_id_walltime, jrg))
+    logger.info(str(mld_res_rqts))
 
     job.mld_res_rqts = mld_res_rqts
     job.key_cache = {}
@@ -557,7 +572,9 @@ def get_waiting_scheduled_AR_jobs(queue_name, resource_set, job_security_time, n
 
 
 # TODO MOVE TO GANTT_HANDLING ???
-def get_gantt_jobs_to_launch(resource_set, job_security_time, now):
+def get_gantt_jobs_to_launch(
+    resource_set, job_security_time, now, kill_duration_before_reservation=0
+):
 
     # get unlaunchable jobs
     # NOT USED launcher will manage these cases ??? (MUST BE CONFIRMED)
@@ -572,6 +589,7 @@ def get_gantt_jobs_to_launch(resource_set, job_security_time, now):
     #                   OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
     #
     #           .all()
+    date = now + kill_duration_before_reservation
 
     result = (
         db.query(
@@ -581,7 +599,7 @@ def get_gantt_jobs_to_launch(resource_set, job_security_time, now):
             MoldableJobDescription.walltime,
             GanttJobsResource.resource_id,
         )
-        .filter(GanttJobsPrediction.start_time <= now)
+        .filter(GanttJobsPrediction.start_time <= date)
         .filter(Job.state == "Waiting")
         .filter(Job.id == MoldableJobDescription.job_id)
         .filter(MoldableJobDescription.id == GanttJobsPrediction.moldable_id)
@@ -1155,14 +1173,12 @@ def update_scheduler_last_job_date(date, moldable_id):
 # Get all waiting reservation jobs
 # parameter : database ref
 # return an array of moldable job informations
-def get_waiting_reservations_already_scheduled(resource_set, job_security_time):
-
+def get_waiting_moldable_of_reservations_already_scheduled():
+    """
+    return the moldable jobs assigned to already scheduled reservations.
+    """
     result = (
         db.query(
-            Job,
-            GanttJobsPrediction.start_time,
-            GanttJobsResource.resource_id,
-            MoldableJobDescription.walltime,
             MoldableJobDescription.id,
         )
         .filter((Job.state == "Waiting") | (Job.state == "toAckReservation"))
@@ -1171,47 +1187,11 @@ def get_waiting_reservations_already_scheduled(resource_set, job_security_time):
         .filter(GanttJobsPrediction.moldable_id == MoldableJobDescription.id)
         .filter(GanttJobsResource.moldable_id == MoldableJobDescription.id)
         .order_by(Job.id)
+        .distinct()
         .all()
     )
 
-    first_job = True
-    jobs = {}
-    jids = []
-
-    prev_jid = 0
-    roids = []
-
-    job = None  # global job
-
-    if result:
-        for x in result:
-            j, start_time, resource_id, walltime, moldable_id = x
-
-            if j.id != prev_jid:
-                if first_job:
-                    first_job = False
-                else:
-                    job.res_set = ProcSet(*roids)
-                    jids.append(job.id)
-                    jobs[job.id] = job
-                    roids = []
-
-                prev_jid = j.id
-                job = j
-                job.start_time = start_time
-                job.walltime = walltime + job_security_time
-
-            roids.append(resource_set.rid_i2o[resource_id])
-
-        job.res_set = ProcSet(*roids)
-
-        jids.append(moldable_id)
-
-        jobs[job.id] = job
-
-        get_jobs_types(jids, jobs)
-
-    return (jids, jobs)
+    return [x[0] for x in result]
 
 
 # TODO MOVE TO GANTT_HANDLING
