@@ -57,11 +57,14 @@ def jobs_sorting(queues, now, waiting_jids, waiting_jobs, plt):
 def internal_schedule_cycle(plt, now, all_slot_sets, job_security_time, queues):
 
     resource_set = plt.resource_set()
+    logger.info(str(resource_set.hierarchy))
 
     #
     # Retrieve waiting jobs
     #
     waiting_jobs, waiting_jids, nb_waiting_jobs = plt.get_waiting_jobs(queues)
+    for j in waiting_jobs.values():
+        logger.info(str(vars(j)))
 
     if nb_waiting_jobs > 0:
         logger.info("nb_waiting_jobs:" + str(nb_waiting_jobs))
