@@ -284,6 +284,9 @@ def assign_resources_mld_job_split_slots(slots_set, job, hy, min_start_time):
     """Assign resources to a job and update by spliting the concerned slots - moldable version"""
     prev_t_finish = 2 ** 32 - 1  # large enough
     #prev_t_finish = 0
+    #prev_nodes = 3
+    #prev_walltime = 43200
+    #prev_product = prev_nodes*prev_walltime
     prev_res_set = ProcSet()
     prev_res_rqt = ProcSet()
 
@@ -302,13 +305,28 @@ def assign_resources_mld_job_split_slots(slots_set, job, hy, min_start_time):
             return
         # print("after find fisrt suitable")
         t_finish = slots[sid_left].b + walltime
+        #[(hy_level, constraints)] = hy_res_rqts
+        #nodes = hy_level[0][1]
+        #product = nodes*walltime
         if t_finish < prev_t_finish:
+        #if nodes < prev_nodes:
+        #if product < prev_product:
+            logger.info("Ending time:" + " " + str(t_finish) + " < " + str(prev_t_finish) + "." + " " + "New best, with mld_id=" + str(mld_id))
+            #logger.info("Number of nodes:" + " " + str(nodes) + " < " + str(prev_nodes) + "." + " " + "New best, with mld_id=" + str(mld_id))
+            #logger.info("Product of nodes*walltime:" + " " + str(product) + " < " + str(prev_product) + "." + " " + "New best, with mld_id=" + str(mld_id))
+            #prev_nodes = nodes
+            #prev_walltime = walltime
+            #prev_product = product
             prev_start_time = slots[sid_left].b
             prev_t_finish = t_finish
             prev_res_set = res_set
             prev_res_rqt = res_rqt
             prev_sid_left = sid_left
             prev_sid_right = sid_right
+        else:
+            logger.info("Ending time:" + " " + str(t_finish) + " > " + str(prev_t_finish) + "." + " " + "Keeping current best with mld_id=" + str(prev_res_rqt[0]))
+            #logger.info("Number of nodes:" + " " + str(nodes) + " > " + str(prev_nodes) + "." + " " + "New best, with mld_id=" + str(mld_id))
+            #logger.info("Product of nodes*walltime:" + " " + str(product) + " > " + str(prev_product) + "." + " " + "New best, with mld_id=" + str(mld_id))
 
     (mld_id, walltime, hy_res_rqts) = prev_res_rqt
     job.moldable_id = mld_id
