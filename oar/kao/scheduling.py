@@ -82,6 +82,7 @@ def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
     instance of a job"""
     result = ProcSet()
     for hy_res_rqt in hy_res_rqts:
+        logger.info(str(hy_res_rqt))
         (hy_level_nbs, constraints) = hy_res_rqt
         hy_levels = []
         hy_nbs = []
@@ -90,8 +91,12 @@ def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
             hy_levels.append(hy[l_name])
             hy_nbs.append(n)
 
+        logger.info(str(hy_levels))
+        logger.info(str(hy_nbs))
         itvs_cts_slots = constraints & itvs_slots
+        logger.info(str(itvs_cts_slots))
         res = find_resource_hierarchies_scattered(itvs_cts_slots, hy_levels, hy_nbs)
+        logger.info(str(res))
         if res:
             result = result | res
         else:
@@ -227,6 +232,7 @@ def find_first_suitable_contiguous_slots(slots_set, job, res_rqt, hy, min_start_
             itvs_avail = intersec_ts_ph_itvs_slots(slots, sid_left, sid_right, job)
         else:
             itvs_avail = intersec_itvs_slots(slots, sid_left, sid_right)
+            #logger.info(str(itvs_avail))
         # print("itvs_avail", itvs_avail, "h_res_req", hy_res_rqts, "hy", hy)
         if job.find:
             beginning_slotset = (
@@ -243,6 +249,7 @@ def find_first_suitable_contiguous_slots(slots_set, job, res_rqt, hy, min_start_
             )
         else:
             itvs = find_resource_hierarchies_job(itvs_avail, hy_res_rqts, hy)
+            #logger.info(str(itvs))
 
         if len(itvs) != 0:
             if Quotas.enabled and (not job.no_quotas):
@@ -298,6 +305,7 @@ def assign_resources_mld_job_split_slots(slots_set, job, hy, min_start_time):
         res_set, sid_left, sid_right = find_first_suitable_contiguous_slots(
             slots_set, job, res_rqt, hy, min_start_time
         )
+        #logger.info(str(res_set))
         if len(res_set) == 0:  # no suitable time*resources found
             job.res_set = ProcSet()
             job.start_time = -1

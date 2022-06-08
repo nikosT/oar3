@@ -852,6 +852,7 @@ def meta_schedule(mode="internal", plt=Platform()):
         plt, initial_time_sec, job_security_time
     )
     all_slot_sets, scheduled_jobs, besteffort_rid2jid = gantt_init_results
+    logger.info(str(all_slot_sets))
     resource_set = plt.resource_set()
 
     # Path for user of external schedulers
