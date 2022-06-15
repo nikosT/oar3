@@ -5,7 +5,7 @@ from procset import ProcSet
 
 from oar.kao.quotas import Quotas
 from oar.kao.slot import Slot, SlotSet, intersec_itvs_slots, intersec_ts_ph_itvs_slots
-from oar.lib import config, get_logger
+from oar.lib import Job, JobType, AssignedResource, Resource, config, get_logger, db
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
 from oar.lib.job_handling import ALLOW, JobPseudo
 
@@ -228,11 +228,69 @@ def find_first_suitable_contiguous_slots(slots_set, job, res_rqt, hy, min_start_
         #            cache[walltime] = sid_left
         #            updated_cache = True
 
+        res = db.query(Job.id).filter(Job.state == 'Running').all()
+        running = [t[0] for t in res]
+        res = ( 
+                db.query(JobType.job_id).
+                filter(JobType.type == 'allocation_type=compact').
+                filter(JobType.job_id.in_(tuple(running))).
+                all()
+        )
+        if job.types['allocation_type'] == 'spare':
+            res += (
+                    db.query(JobType.job_id).
+                    filter(JobType.type == 'allocation_type=spread').
+                    filter(JobType.job_id.in_(tuple(running))).
+                    all()
+            )
+        elif job.types['allocation_type'] == 'compact':
+            res += (
+                    db.query(JobType.job_id).
+                    filter(JobType.type == 'allocation_type=dont-care').
+                    filter(JobType.job_id.in_(tuple(running))).
+                    all()
+            )
+
+        running = [t[0] for t in res]
+        res = (
+                db.query(AssignedResource.resource_id).
+                filter(AssignedResource.moldable_id.in_(tuple(running))).
+                all()
+        )
+        rsc = [t[0] for t in res]
+        res = (
+                db.query(Resource.network_address).
+                filter(Resource.id.in_(tuple(rsc))).
+                all()
+        )
+        nodes = [t[0] for t in res]
+        res = (
+                db.query(Resource.id).
+                filter(Resource.id.notin_(tuple(rsc))).
+                filter(Resource.network_address.in_(tuple(nodes))).
+                all()
+        )
+
+        excluded = sorted([t[0]-1 for t in res])
+        itvs_exc = ProcSet()
+
+        if excluded:
+            left = excluded[0]
+            right = left
+            for core in excluded:
+                if core != right:
+                    itvs_exc = itvs_exc | ProcSet((left, right))
+                    left = core
+                    right = left
+                right = core
+            itvs_exc = itvs_exc | ProcSet((left, right))
+            logger.info(str(itvs_exc))
+
         if job.ts or (job.ph == ALLOW):
             itvs_avail = intersec_ts_ph_itvs_slots(slots, sid_left, sid_right, job)
         else:
-            itvs_avail = intersec_itvs_slots(slots, sid_left, sid_right)
-            #logger.info(str(itvs_avail))
+            itvs_avail = intersec_itvs_slots(slots, sid_left, sid_right) - itvs_exc
+            logger.info(str(itvs_avail))
         # print("itvs_avail", itvs_avail, "h_res_req", hy_res_rqts, "hy", hy)
         if job.find:
             beginning_slotset = (

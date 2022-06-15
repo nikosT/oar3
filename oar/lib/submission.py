@@ -24,6 +24,7 @@ from oar.lib import (
     Resource,
     config,
     db,
+    get_logger
 )
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
 from oar.lib.resource import ResourceSet
@@ -36,6 +37,8 @@ from oar.lib.tools import (
     sql_to_local,
 )
 
+
+logger = get_logger("oar.lib.submission")
 
 def lstrip_none(s):
     if s:
@@ -1062,12 +1065,14 @@ def add_micheline_jobs(
         job_parameters.types.remove("no_quotas")
 
     # Retrieve Micheline's rules
+    logger.info(str(vars(job_parameters)))
     str_rules = ""
     if ("ADMISSION_RULES_IN_FILES" in config) and (
         config["ADMISSION_RULES_IN_FILES"] == "yes"
     ):
         # Read admission_rules from files
-        rules_dir = "/etc/oar/admission_rules.d/"
+        #rules_dir = "/etc/oar/admission_rules.d/"
+        rules_dir = "/srv/oar3_clone/etc/oar/admission_rules.d/"
         file_names = os.listdir(rules_dir)
 
         file_names.sort()
@@ -1076,6 +1081,9 @@ def add_micheline_jobs(
                 with open(rules_dir + file_name, "r") as rule_file:
                     for line in rule_file:
                         str_rules += line
+
+        logger.info(str(vars(job_parameters)))
+
     else:
         # Retrieve Micheline's rules from database
         rules = (

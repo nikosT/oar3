@@ -86,22 +86,22 @@ def extract_n_scattered_block_itv(itvs1, itvs_ref, n):
             ProcSet()
     """
     lr = len(itvs_ref)
-    #i = 0
-    i = lr-1
+    i = 0
+    #i = lr-1
 
     itvs = ProcSet()
 
     # While we still need to collect, or the hierarchy level is empty
-    while (n > 0) and (i >= 0):
-    #while (n > 0) and (i < lr):
+    #while (n > 0) and (i >= 0):
+    while (n > 0) and (i < lr):
         x = itvs_ref[i]
         y = itvs1 & x
         # Check that all the resources contained in itvs_ref[i] are free
         if x == y:
             itvs = itvs | y
             n -= 1
-        #i += 1
-        i -= 1
+        i += 1
+        #i -= 1
 
     if n == 0:
         return itvs

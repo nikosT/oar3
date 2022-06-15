@@ -2,7 +2,7 @@
 # Description: add sequentiel constraint on jobs requesting less or equal to one node and having a large walltime
 
 human_seq_walltime = "24:00:00"
-seq_walltime = sql_to_duration(human_seq_walltime)
+seq_walltime = tools.sql_to_duration(human_seq_walltime)
 
 if project != "admin" and queue != "besteffort":
     e = estimate_job_nb_resources(resource_request, properties)
