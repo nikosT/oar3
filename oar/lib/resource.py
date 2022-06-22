@@ -5,11 +5,12 @@ from collections import OrderedDict
 from procset import ProcSet
 from sqlalchemy import text
 
-from oar.lib import Resource, config, db
+from oar.lib import Resource, config, db, get_logger
 from oar.lib.hierarchy import Hierarchy
 
 MAX_NB_RESOURCES = 100000
 
+logger = get_logger("oar.lib.resource")
 
 class ResourceSet(object):
 
@@ -106,14 +107,16 @@ class ResourceSet(object):
         # global ordered resources intervals
         # print roids
         self.roid_itvs = ProcSet(*roids)  # TODO
-
         if "id" in hy_roid:
             hy_roid["resource_id"] = hy_roid["id"]
             del hy_roid["id"]
-
+        
+        del hy_roid["firsthalf"][0] 
+        del hy_roid["secondhalf"][0]
+        logger.info(str(hy_roid))
         # create hierarchy
         self.hierarchy = Hierarchy(hy_rid=hy_roid).hy
-
+        logger.info(str(self.hierarchy))
         # transform available_upto
         for k, v in available_upto.items():
             self.available_upto[k] = ProcSet(*v)

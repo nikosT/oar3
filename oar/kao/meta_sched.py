@@ -735,7 +735,8 @@ def call_internal_scheduler(
     Internal scheduling phase. The scheduler is not loaded from an external command,
     so it can shares states with the metascheduler and between scheduling phases (on each queues).
     """
-
+    for j in scheduled_jobs:
+        logger.info(str(vars(j)))
     # Place running besteffort jobs if their queue is considered
     if (len(queues) == 1) and (queues[0].name == "besteffort"):
         set_slots_with_prev_scheduled_jobs(
