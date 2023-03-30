@@ -129,3 +129,6 @@ skip = ["tests/lib/etc", ".venv"]
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.poetry.plugins."oar.find_func"]
+compact = "oar.kao.custom_scheduling:compact"
