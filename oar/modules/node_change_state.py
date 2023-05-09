@@ -82,7 +82,6 @@ class NodeChangeState(object):
                         and (is_an_event_exists(job_id, "SEND_KILL_JOB") == 0)
                         and ((job.stop_time - job.start_time) > 60)
                     ):
-
                         new_job_id = resubmit_job(job_id)
                         logger.warning(
                             "Resubmiting job "
@@ -278,7 +277,6 @@ class NodeChangeState(object):
 
             # Check Suspend/Resume job feature
             if event.type in ["HOLD_WAITING_JOB", "HOLD_RUNNING_JOB", "RESUME_JOB"]:
-
                 if event.type != "RESUME_JOB" and job.state == "Waiting":
                     set_job_state(job_id, "Hold")
                     if job.type == "INTERACTIVE":
@@ -351,17 +349,17 @@ class NodeChangeState(object):
                             frag_job(job_id)
                             self.exit_code = 2
 
-                        else:
-                            logger.debug(
-                                "("
-                                + resource.network_address
-                                + ") "
-                                + str(r_id)
-                                + "is already in the "
-                                + next_state
-                                + " state"
-                            )
-                            set_resource_nextState(r_id, "UnChanged")
+                else:
+                    logger.debug(
+                        "("
+                        + resource.network_address
+                        + ") "
+                        + str(r_id)
+                        + "is already in the "
+                        + next_state
+                        + " state"
+                    )
+                    set_resource_nextState(r_id, "UnChanged")
 
         email = None
         for network_address, rid_next_state in debug_info.items():

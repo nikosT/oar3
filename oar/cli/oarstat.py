@@ -3,6 +3,7 @@ import datetime
 import re
 import sys
 from json import dumps
+from typing import Generator, List
 
 import click
 
@@ -49,47 +50,137 @@ STATE2CHAR = {
 }
 
 
-def print_jobs(legacy, jobs, json=False):
+def get_table_lines(jobs) -> List[str]:
+    # The headers to print
+    headers: List[str] = [
+        "Job id",
+        "State",
+        "User",
+        "Duration",
+        "System message",
+    ]
+    # First yield the headers
+    yield headers
 
     now = tools.get_date()
+    for job in jobs:
+        # Compute job duration
+        duration = 0
+        if job.start_time:
+            if now > job.start_time:
+                if job.state in ["Running", "Launching", "Finishing"]:
+                    duration = now - job.start_time
+                elif job.stop_time != 0:
+                    duration = job.stop_time - job.start_time
+                else:
+                    duration = -1
 
+        # !! It must be consistent wih `header_columns`
+        job_line = [
+            str(job.id),
+            STATE2CHAR[job.state],
+            str(job.user),
+            str(datetime.timedelta(seconds=duration)),
+            str(job.message),
+        ]
+
+        yield job_line
+
+
+def gather_all_user_accounting(items) -> List[str]:
+    # The headers to print
+    headers: List[str] = [
+        "User",
+        "First window starts",
+        "Last window ends",
+        "Asked (seconds)",
+        "Used (seconds)",
+    ]
+    # First yield the headers
+    yield headers
+
+    for user, consumption_user in items:
+        asked = 0
+        if "ASKED" in consumption_user:
+            asked = consumption_user["ASKED"]
+        used = 0
+        if "USED" in consumption_user:
+            used = consumption_user["USED"]
+
+        begin = local_to_sql(consumption_user["begin"])
+        end = local_to_sql(consumption_user["end"])
+
+        yield [
+            user,
+            str(begin),
+            str(end),
+            str(asked),
+            str(used),
+        ]
+
+
+def print_table(
+    objects: List[any],
+    gather_prop: Generator[List[str], None, None],
+    min_column_size: int = 7,
+):
+    """
+    Simple algorithm to print a list of list given by a generator. Used to print the table of jobs in the terminal.
+    It doesn't take into account the size of the terminal.
+
+    Steps:
+    - Construct a list of all lines List[List[str]] (where a list is a list of strings)
+    - Gather all information about the jobs
+    - For each column of each line find the longest string (that should be the size of the column)
+    - Print every lines knowing the size of each columns
+    """
+
+    lines_generator = gather_prop(objects)
+
+    # The first yielded value should be the header list
+    lines = [next(lines_generator)]
+
+    # List for the max size of each columns
+    sizes = [len(i) if len(i) > min_column_size else min_column_size for i in lines[0]]
+
+    # Loop through the job lines
+    for line in lines_generator:
+        for i in range(len(line)):
+            if sizes[i] < len(line[i]):
+                sizes[i] = len(line[i])
+
+        lines.append(line)
+
+    # Add a line of separators
+    separators: List[str] = list(map(lambda size: "{}".format(size * "-"), sizes))
+    # Insert it just after the headers
+    lines.insert(1, separators)
+
+    for line in lines:
+        for col_idx in range(len(line)):
+            col_size = sizes[col_idx]
+            print(f"{{:^{col_size}s}} ".format(line[col_idx]), end="")
+        print()
+
+
+def print_jobs(legacy, jobs, json=False):
     if legacy and not json:
-        print(
-            "Job id    S User     Duration          System message\n"
-            + "--------- - -------- ----------------- ------------------------------------------------"
-        )
-        now = tools.get_date()
-        for job in jobs:
-            duration = 0
-            if job.start_time:
-                if now > job.start_time:
-                    if job.state in ["Running", "Launching", "Finishing"]:
-                        duration = now - job.start_time
-                    elif job.stop_time != 0:
-                        duration = job.stop_time - job.start_time
-                    else:
-                        duration = -1
-
-            print(
-                "{:9}".format(str(job.id))
-                + " "
-                + STATE2CHAR[job.state]
-                + " "
-                + "{:8}".format(str(job.user))
-                + " "
-                + "{:>10}".format(str(datetime.timedelta(seconds=duration)))
-                + " "
-                + "{:48}".format(job.message)
-            )
+        print_table(jobs, get_table_lines)
     elif json:
         # TODO to enhance
+        to_dump = {}
         # to_dict() doesn't incorporate attributes not defined in the , thus the dict merging
-        print(dumps([{**j.to_dict(), **{"cpuset_name": j.cpuset_name}} for j in jobs]))
+        jobs_properties = [
+            {**j.to_dict(), **{"cpuset_name": j.cpuset_name}} for j in jobs
+        ]
+        for job in jobs_properties:
+            to_dump[job["id"]] = job
+        print(dumps(to_dump))
     else:
         print(jobs)
 
 
-def print_accounting(cmd_ret, accounting, user, sql_property):
+def print_accounting(cmd_ret, accounting, user, sql_property, json=False):
     # --accounting "YYYY-MM-DD, YYYY-MM-DD"
     m = re.match(
         r"\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s*", accounting
@@ -167,68 +258,95 @@ def print_accounting(cmd_ret, accounting, user, sql_property):
                         print("{:>28}: {}".format("Last Karma", m.group(1)))
         # All users array output
         else:
-            print(
-                "User       First window starts  Last window ends     Asked (seconds)  Used (seconds)"
-            )
-            print(
-                "---------- -------------------- -------------------- ---------------- ----------------"
-            )
-            for user, consumption_user in consumptions.items():
-                asked = 0
-                if "ASKED" in consumption_user:
-                    asked = consumption_user["ASKED"]
-                used = 0
-                if "USED" in consumption_user:
-                    used = consumption_user["USED"]
-
-                begin = local_to_sql(consumption_user["begin"])
-                end = local_to_sql(consumption_user["end"])
-
-                print(
-                    "{:>10} {:>20} {:>20} {:>16} {:>16}".format(
-                        user, begin, end, asked, used
-                    )
-                )
+            print_table(consumptions.items(), gather_all_user_accounting)
     else:
         cmd_ret.error("Bad syntax for --accounting", 1, 1)
         cmd_ret.exit()
 
 
-def print_events(cmd_ret, job_ids, array_id):
+def print_events(cmd_ret, job_ids, array_id, json=False):
     if array_id:
         job_ids = get_array_job_ids(array_id)
+
     if job_ids:
         events = get_jobs_events(job_ids)
-        for ev in events:
-            print(
-                "{}> [{}] {}: {}".format(
-                    local_to_sql(ev.date), ev.job_id, ev.type, ev.description
-                )
-            )
+
+        if not json:
+
+            def gather_events(events):
+                yield ["Date", "job id", "Type", "Description"]
+                for event in events:
+                    yield [
+                        str(local_to_sql(event.date)),
+                        str(event.job_id),
+                        str(event.type),
+                        str(event.description),
+                    ]
+
+            print_table(events, gather_events)
+        else:
+            events_per_jobs = dict()
+            for event in events:
+                if str(event.job_id) not in events_per_jobs:
+                    events_per_jobs[str(event.job_id)] = []
+                event_dict = {
+                    "date": str(local_to_sql(event.date)),
+                    "type": str(event.type),
+                    "description": str(event.description),
+                }
+                events_per_jobs[str(event.job_id)].append(event_dict)
+            print(dumps(events_per_jobs))
+
     else:
         cmd_ret.warning("No job ids specified")
 
 
-def print_properties(cmd_ret, job_ids, array_id):
+def print_properties(cmd_ret, job_ids, array_id, json=False):
     if array_id:
         job_ids = get_array_job_ids(array_id)
-    if job_ids:
 
+    if job_ids:
+        # Gather a list of [(Resource, job_id), ...]
         resources_properties = [
-            p for job_id in job_ids for p in get_job_resources_properties(job_id)
+            (p, job_id)
+            for job_id in job_ids
+            for p in get_job_resources_properties(job_id)
         ]
-        for resource_properties in resources_properties:
-            print_comma = False
-            for prop, value in resource_properties.to_dict().items():
-                if print_comma:
-                    print(" , ", end="")
-                else:
-                    print_comma = True
-                if not check_resource_system_property(prop):
-                    print("{} = '{}'".format(prop, value), end="")
-                else:
-                    print_comma = False
-            print()
+
+        # For each job, construct the list of its resources properties
+        properties_for_job = dict()
+        for resource_properties, job_id in resources_properties:
+            if job_id not in properties_for_job:
+                properties_for_job[job_id] = []
+
+            properties_for_job[job_id].append(
+                {
+                    prop: value
+                    for prop, value in resource_properties.to_dict().items()
+                    if not check_resource_system_property(prop)
+                }
+            )
+
+        # If json, the `properties_for_job` is ready to be dumped
+        if json:
+            print(dumps(properties_for_job))
+        else:
+            # For normal print, all resources are printed in a new line regardless of their jobs
+            # First flatten the properties into an array
+            all_jobs = [
+                properties
+                for job_id, resources_properties in properties_for_job.items()  # Higher loop
+                for properties in resources_properties  # Sublist
+            ]
+            for properties in all_jobs:
+                property_line = ", ".join(
+                    map(
+                        lambda item: "{} = '{}'".format(item[0], item[1]),
+                        properties.items(),
+                    )
+                )
+                print(property_line)
+
     else:
         cmd_ret.warning("No job ids specified")
 
@@ -392,9 +510,9 @@ def cli(
     if accounting:
         print_accounting(cmd_ret, accounting, user, sql)
     elif events:
-        print_events(cmd_ret, job_ids, array_id)
+        print_events(cmd_ret, job_ids, array_id, json=json)
     elif properties:
-        print_properties(cmd_ret, job_ids, array_id)
+        print_properties(cmd_ret, job_ids, array_id, json=json)
     elif state:
         print_state(cmd_ret, job_ids, array_id, json)
     else:

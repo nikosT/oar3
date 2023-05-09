@@ -12,6 +12,7 @@ import click
 
 import oar.lib.tools as tools
 from oar import VERSION
+from oar.lib import db
 from oar.lib.database import wait_db_ready
 from oar.lib.job_handling import get_job
 from oar.lib.node import (
@@ -69,6 +70,9 @@ def wait_end_of_running_jobs(cmd_ret, jobs):
         count = 0
         while True:
             job = get_job(job_id)
+            # Without this commit get_job keeps polling old data even
+            # if the job state is changing. Maybe there is a better way...
+            db.commit()
             if (
                 job.state == "Terminated"
                 or job.state == "Error"
@@ -218,7 +222,7 @@ def oarnodesetting(
         for host in hostnames:
             # wait_db_ready to manage DB taking time to be up during boot
             try:
-                wait_db_ready(add_resource, (host, state))
+                new_resource_id = wait_db_ready(add_resource, (host, state))
             except Exception as e:
                 cmd_ret.error(f"Failed to contact database: {e}", 1, 1)
                 cmd_ret.exit()
@@ -227,6 +231,10 @@ def oarnodesetting(
         notify_server_tag_list.append("ChState")
         notify_server_tag_list.append("Term")
 
+        # In case of adding a new resources we fill the field `resources` in order
+        # to call `set_resources_properties` (at the end of the function) with the resource id instead
+        # of the whole hostname causing an unwanted update to all host resources.
+        resources = (new_resource_id,)
     else:
         if resources:
             if state:

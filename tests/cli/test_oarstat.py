@@ -42,11 +42,17 @@ def test_version():
 
 def test_oarstat_simple():
     for _ in range(NB_JOBS):
-        insert_job(res=[(60, [("resource_id=4", "")])], properties="")
+        insert_job(
+            res=[(60, [("resource_id=4", "")])],
+            properties="",
+            job_user="Toto",
+            message="Relatively long message",
+        )
+
     runner = CliRunner()
-    result = runner.invoke(cli)
+    result = runner.invoke(cli, catch_exceptions=False)
     nb_lines = len(result.output.split("\n"))
-    print(result.output)
+    print("\n" + result.output)
     assert nb_lines == NB_JOBS + 3
     assert result.exit_code == 0
 
@@ -55,9 +61,12 @@ def test_oarstat_sql_property():
     for i in range(NB_JOBS):
         insert_job(res=[(60, [("resource_id=4", "")])], properties="", user=str(i))
     runner = CliRunner()
-    result = runner.invoke(cli, ["--sql", "(job_user='2' OR job_user='3')"])
-    print(result.output)
+    result = runner.invoke(
+        cli, ["--sql", "(job_user='2' OR job_user='3')"], catch_exceptions=False
+    )
+    print("\n" + result.output)
     nb_lines = len(result.output.split("\n"))
+
     assert nb_lines == 5
     assert result.exit_code == 0
 
@@ -129,16 +138,15 @@ def test_oarstat_gantt():
 
 
 def test_oarstat_events():
-
     job_id = insert_job(res=[(60, [("resource_id=4", "")])])
     add_new_event("EXECUTE_JOB", job_id, "Have a good day !")
 
     runner = CliRunner()
     result = runner.invoke(cli, ["--events", "--job", str(job_id)])
 
-    str_result = result.output
-    print(str_result)
-    assert re.match(".*EXECUTE_JOB.*", str_result)
+    str_result = result.output.splitlines()
+    print("\n" + result.output)
+    assert re.match(".*EXECUTE_JOB.*", str_result[2])
 
 
 def test_oarstat_events_array():
@@ -151,9 +159,32 @@ def test_oarstat_events_array():
     runner = CliRunner()
     result = runner.invoke(cli, ["--events", "--array", str(10)])
 
-    str_result = result.output
-    print(str_result)
+    print("\n" + result.output)
+    # Remove the headers
+    str_result = "\n".join(result.output.splitlines()[2:])
+
     assert re.match(".*EXECUTE_JOB.*", str_result)
+
+
+def test_oarstat_events_array_json():
+    job_ids = []
+    for _ in range(5):
+        job_id = insert_job(res=[(60, [("resource_id=4", "")])], array_id=100)
+        add_new_event("EXECUTE_JOB", job_id, "Have a good day !")
+        job_ids.append(job_id)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["--events", "--array", str(100), "-J"], catch_exceptions=False
+    )
+
+    print("lla\n" + result.output)
+    try:
+        parsed_json = json.loads(result.output)
+        assert len(parsed_json) == 5
+    except ValueError:
+        assert False
+    assert result.exit_code == 0
 
 
 def test_oarstat_events_no_job_ids():
@@ -168,10 +199,25 @@ def test_oarstat_properties():
     insert_terminated_jobs(update_accounting=False)
     job_id = db.query(Job.id).first()[0]
     runner = CliRunner()
-    result = runner.invoke(cli, ["--properties", "--job", str(job_id)])
+    result = runner.invoke(
+        cli, ["--properties", "--job", str(job_id)], catch_exceptions=False
+    )
     str_result = result.output
-    print(str_result)
+    print("res:\n" + str_result)
     assert re.match(".*network_address.*", str_result)
+
+
+def test_oarstat_properties_json():
+    insert_terminated_jobs(update_accounting=False)
+    job_id = db.query(Job.id).first()[0]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["--properties", "--job", str(job_id), "-J"], catch_exceptions=False
+    )
+    parsed_json = json.loads(result.output)
+    print(parsed_json)
+    assert str(job_id) in parsed_json
+    assert len(parsed_json[str(job_id)]) == 2
 
 
 def test_oarstat_state():
@@ -226,7 +272,7 @@ def test_oarstat_full_json():
         parsed_json = json.loads(str_result)
         assert len(parsed_json) == NB_JOBS
         for job in parsed_json:
-            assert "cpuset_name" in job
+            assert "cpuset_name" in parsed_json[job]
 
     except ValueError:
         assert False
@@ -240,13 +286,16 @@ def test_oarstat_json_only_one_job():
         )
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["--json", "--full", "-j", str(jid)])
+    result = runner.invoke(
+        cli, ["--json", "--full", "-j", str(jid), "-j", str(jid - 1)]
+    )
     str_result = result.output
-    print(str_result)
+
     try:
         parsed_json = json.loads(str_result)
-        assert len(parsed_json) == 1
-        assert parsed_json[0]["id"] == jid
+        print(parsed_json)
+        assert len(parsed_json) == 2
+        assert parsed_json[str(jid)]["id"] == jid
     except ValueError:
         assert False
     assert result.exit_code == 0
@@ -257,3 +306,26 @@ def test_oarstat_job_id_array_error():
     result = runner.invoke(cli, ["-j", "1", "--array", "1"])
     print(result.output)
     assert result.exit_code == 1
+
+
+def test_oarstat_job_id_error():
+    # Error jobs
+    jid = insert_job(
+        res=[(60, [("resource_id=4", "")])], user="toto", properties="", state="Error"
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["-j", str(jid), "-J"])
+
+    print(result.output)
+    str_result = result.output
+
+    try:
+        parsed_json = json.loads(str_result)
+        print(parsed_json)
+        assert len(parsed_json) == 1
+        assert parsed_json[str(jid)]["id"] == jid
+
+    except ValueError:
+        assert False
+    assert result.exit_code == 0

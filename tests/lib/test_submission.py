@@ -51,6 +51,36 @@ def minimal_db_initialization(request):
         yield
 
 
+@pytest.fixture(scope="function", autouse=False)
+def create_hierarchy(request):
+    with db.session(ephemeral=True):
+        for i in range(4):
+            db["Resource"].create(
+                network_address="localhost-1",
+                host="localhost-1",
+                cpu=str(i // 2 + 1),
+                core=i + 1,
+            )
+
+        for i in range(i + 1, 8):
+            db["Resource"].create(
+                network_address="localhost-2",
+                host="localhost-2",
+                cpu=str(i // 2 + 1),
+                core=i + 1,
+            )
+
+        for i in range(i + 1, 12):
+            db["Resource"].create(
+                network_address="localhost-3",
+                host="localhost-3",
+                cpu=str(i // 2 + 1),
+                core=i + 1,
+            )
+
+        yield
+
+
 @pytest.fixture(scope="function")
 def active_quotas(request):
     print("active_quotas")
@@ -94,7 +124,6 @@ def default_job_parameters(resource_request):
 
 
 def test_add_micheline_jobs_1():
-
     job_parameters = default_job_parameters(None)
     import_job_key_inline = ""
     import_job_key_file = ""
@@ -110,7 +139,6 @@ def test_add_micheline_jobs_1():
 
 
 def test_add_micheline_jobs_2():
-
     job_parameters = default_job_parameters(None)
     import_job_key_inline = ""
     import_job_key_file = ""
@@ -131,7 +159,6 @@ def test_add_micheline_jobs_2():
 
 @pytest.mark.usefixtures("active_quotas")
 def test_add_micheline_jobs_no_quotas_1():
-
     job_parameters = default_job_parameters(None)
     import_job_key_inline = ""
     import_job_key_file = ""
@@ -154,7 +181,6 @@ def test_add_micheline_jobs_no_quotas_1():
 
 @pytest.mark.usefixtures("active_quotas")
 def test_add_micheline_jobs_quotas_admin():
-
     job_parameters = default_job_parameters(None)
     import_job_key_inline = ""
     import_job_key_file = ""
@@ -178,7 +204,6 @@ def test_add_micheline_jobs_quotas_admin():
 
 
 def test_add_micheline_simple_array_job():
-
     prev_conf0 = config["OARSUB_DEFAULT_RESOURCES"]
     prev_conf1 = config["OARSUB_NODES_RESOURCES"]
 
@@ -294,3 +319,76 @@ def test_job_parameter_notify_badexec():
         "insecure characters found in the notification method (the allowed regexp is: "
         "[a-zA-Z0-9_.\\/ -]+).",
     )
+
+
+@pytest.mark.parametrize(
+    "res_request,expected",
+    [
+        (
+            [
+                {
+                    "property": "cpu = '1'",
+                    "resources": [{"resource": "core", "value": "1"}],
+                },
+                {
+                    "property": "cpu = '2'",
+                    "resources": [{"resource": "core", "value": "1"}],
+                },
+            ],
+            2,
+        ),
+        (
+            [
+                {
+                    "property": "host = 'localhost-2'",
+                    "resources": [{"resource": "cpu", "value": "1"}],
+                }
+            ],
+            2,
+        ),
+        (
+            [
+                {
+                    "property": "host = 'localhost-1'",
+                    "resources": [{"resource": "core", "value": "4"}],
+                },
+                {
+                    "property": "host = 'localhost-2'",
+                    "resources": [{"resource": "core", "value": "2"}],
+                },
+            ],
+            6,
+        ),
+        (
+            [
+                {
+                    "property": "host = 'localhost-1'",
+                    "resources": [{"resource": "cpu", "value": "1"}],
+                },
+                {
+                    "property": "host = 'localhost-2'",
+                    "resources": [{"resource": "core", "value": "2"}],
+                },
+            ],
+            4,
+        ),
+    ],
+)
+# This doesn't test moldable jobs
+def test_estimate_job_nb_resources(
+    monkeypatch, create_hierarchy, res_request, expected
+):
+    from oar.lib.submission import estimate_job_nb_resources
+
+    request = [
+        (
+            res_request,
+            None,
+        )
+    ]
+
+    error, resource_available, estimated_nb_resources = estimate_job_nb_resources(
+        request, None
+    )
+
+    assert estimated_nb_resources[0][0] == expected

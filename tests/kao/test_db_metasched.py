@@ -25,6 +25,9 @@ def minimal_db_initialization(request):
         db["Queue"].create(
             name="default", priority=3, scheduler_policy="kamelot", state="Active"
         )
+        db["Queue"].create(
+            name="besteffort", priority=0, scheduler_policy="kamelot", state="Active"
+        )
 
         # add some resources
         for i in range(5):
@@ -46,7 +49,6 @@ def monkeypatch_tools(request, monkeypatch):
 
 
 def test_db_metasched_simple_1(monkeypatch):
-
     print("DB_BASE_FILE: ", config["DB_BASE_FILE"])
     insert_job(res=[(60, [("resource_id=4", "")])], properties="")
     job = db["Job"].query.one()
@@ -223,6 +225,34 @@ def test_call_external_scheduler_fails(monkeypatch):
 
     # Check that the default queue has been found an tested
     assert findQueue
+
+
+def test_db_metasched_be_released_for_job(monkeypatch):
+    environ["USER"] = "root"  # Allow to frag jobs
+
+    now = get_date()
+    monkeypatch.setattr(oar.lib.tools, "get_date", lambda: 100)
+
+    job_id = insert_job(
+        res=[(500, [("resource_id=5", "")])],
+        start_time=now - 250,
+        state="Running",
+        types=["besteffort"],
+        queue_name="besteffort",
+    )
+    assign_resources(job_id)
+
+    meta_schedule()
+    monkeypatch.setattr(oar.lib.tools, "get_date", get_date)
+
+    # Insert a running best effort jobs with some assigned resources
+    insert_job(res=[(500, [("resource_id=4", "")])], queue_name="default")
+
+    # Meta scheduler should frag the best effort job
+    meta_schedule()
+
+    fragjob = db.query(FragJob).first()
+    assert fragjob.job_id == job_id
 
 
 def test_db_metasched_ar_2(monkeypatch):

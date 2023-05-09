@@ -10,7 +10,6 @@ import sys
 
 from procset import ProcSet
 
-import oar.kao.extra_metasched
 import oar.lib.tools as tools
 from oar.kao.kamelot import internal_schedule_cycle
 from oar.kao.platform import Platform
@@ -72,12 +71,15 @@ from oar.lib.node import (
     get_next_job_date_on_node,
     search_idle_nodes,
 )
+from oar.lib.plugins import find_plugin_function
 from oar.lib.queue import get_queues_groupby_priority, stop_queue
 from oar.lib.tools import PIPE, TimeoutExpired, duration_to_sql, local_to_sql
 from oar.modules.hulot import HulotClient
 
 # Constant duration time of a besteffort job *)
 besteffort_duration = 300  # TODO conf ???
+
+EXTRA_METASCHED_FUNC_ENTRY_POINT = "oar.extra_metasched_func"
 
 # TODO : not used, to confirm
 # timeout for validating reservation
@@ -251,7 +253,6 @@ def prepare_job_to_be_launched(job, current_time_sec):
 def handle_waiting_reservation_jobs(
     queue_name, resource_set, job_security_time, current_time_sec
 ):
-
     logger.debug(
         "Queue " + queue_name + ": begin processing accepted Advance Reservations"
     )
@@ -261,7 +262,6 @@ def handle_waiting_reservation_jobs(
     )
 
     for job in ar_jobs:
-
         moldable_id = job.moldable_id
         walltime = job.walltime
 
@@ -275,7 +275,6 @@ def handle_waiting_reservation_jobs(
             set_job_state(job.id, "Error")
             set_job_message(job.id, "Reservation expired and couldn't be started.")
         else:
-
             # Determine current available resources
             avail_res = resource_set.roid_itvs & job.res_set
 
@@ -514,10 +513,10 @@ def check_besteffort_jobs_to_kill(
                         logger.debug(
                             "Resource "
                             + str(rid)
-                            + "need to be freed for job "
-                            + str(be_job.id)
-                            + ": killing besteffort job "
+                            + " need(s) to be freed for job "
                             + str(job_to_launch.id)
+                            + ": killing besteffort job "
+                            + str(be_job.id)
                         )
 
                         add_new_event(
@@ -718,7 +717,6 @@ def call_external_scheduler(
 def call_batsim_sched_proxy(
     plt, scheduled_jobs, all_slot_sets, job_security_time, queue, now
 ):
-
     from oar.kao.batsim_sched_proxy import BatsimSchedProxy
 
     global batsim_sched_proxy
@@ -769,7 +767,6 @@ def nodes_energy_saving(current_time_sec):
         ("SCHEDULER_NODE_MANAGER_SLEEP_TIME" in config)
         and ("SCHEDULER_NODE_MANAGER_IDLE_TIME" in config)
     ):
-
         # Look at nodes that are unused for a duration
         idle_duration = int(config["SCHEDULER_NODE_MANAGER_IDLE_TIME"])
         sleep_duration = int(config["SCHEDULER_NODE_MANAGER_SLEEP_TIME"])
@@ -864,8 +861,8 @@ def meta_schedule(mode="internal", plt=Platform()):
         )
 
     if ("EXTRA_METASCHED" in config) and (config["EXTRA_METASCHED"] != "default"):
-        extra_metasched_func = getattr(
-            oar.kao.extra_metasched, "extra_metasched_%s" % config["EXTRA_METASCHED"]
+        extra_metasched_func = find_plugin_function(
+            EXTRA_METASCHED_FUNC_ENTRY_POINT, config["EXTRA_METASCHED"]
         )
         if "EXTRA_METASCHED_CONFIG" in config:
             extra_metasched_config = config["EXTRA_METASCHED_CONFIG"]
@@ -881,7 +878,6 @@ def meta_schedule(mode="internal", plt=Platform()):
     prev_queues = None
 
     for queues in get_queues_groupby_priority():
-
         extra_metasched_func(
             prev_queues,
             plt,
