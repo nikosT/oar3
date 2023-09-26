@@ -32,6 +32,7 @@ from oar.lib.tools import (
     get_date,
     hms_str_to_duration,
     sql_to_local,
+    sql_to_duration
 )
 
 
