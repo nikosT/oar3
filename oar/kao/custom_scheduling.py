@@ -1,5 +1,5 @@
 from procset import ProcSet
-from oar.lib import get_logger
+from oar.lib.globals import get_logger
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
 import oar
 
