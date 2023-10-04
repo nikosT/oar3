@@ -14,4 +14,4 @@ passlib
 pyyaml
 escapism
 toml
-
+joblib
