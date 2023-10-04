@@ -16,3 +16,4 @@ escapism
 toml
 rich
 clustershell
+joblib

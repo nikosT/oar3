@@ -78,8 +78,12 @@ ptpython = "^3.0.20"
 rich = ">=12.5, <=13.5.5"
 ClusterShell = ">=1.8"
 httpx = ">=0.23.0"
+<<<<<<< HEAD
 bcrypt = "^4.0.1"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+=======
+joblib = ">=1.2.0"
+>>>>>>> First trial of adding a new Python lib
 
 [tool.poetry.dev-dependencies]
 zerorpc = "^0.6.3"
