@@ -2,6 +2,7 @@
 # check variables
 print(resource_request, properties, types) # debug
 
+import joblib
 
 def model(resource_request, properties):
     """
