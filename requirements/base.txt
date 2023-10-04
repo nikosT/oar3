@@ -15,3 +15,5 @@ pyyaml
 escapism
 toml
 joblib
+numpy
+pandas
