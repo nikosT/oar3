@@ -3,6 +3,10 @@
 print(resource_request, properties, types) # debug
 
 import joblib
+import numpy
+import pandas
+
+print('Python libs loaded')
 
 def model(resource_request, properties):
     """

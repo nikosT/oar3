@@ -17,3 +17,5 @@ toml
 rich
 clustershell
 joblib
+numpy
+pandas
