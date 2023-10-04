@@ -2,11 +2,6 @@
 # check variables
 print(resource_request, properties, types) # debug
 
-import joblib
-import numpy
-import pandas
-
-print('Python libs loaded')
 
 def model(resource_request, properties):
     """
@@ -16,6 +11,32 @@ def model(resource_request, properties):
     type_from_ml = 'find=no_pref'
 
     # placeholder functionality of ML
+    from joblib import load
+    import pandas as pd
+    import numpy as np
+
+    model = load('./trainedGradientBoostingRegressor.model')
+    dummy_feature_vector = pd.DataFrame(np.zeros((1, 12)), columns=['avg_total_time_A',
+                                                                    'compute_time_A',
+                                                                    'mpi_time_A',
+                                                                    'ipc_A',
+                                                                    'dp_FLOPS_per_node_A',
+                                                                    'bw_per_node_A',
+                                                                    'avg_total_time_B',
+                                                                    'compute_time_B',
+                                                                    'mpi_time_B',
+                                                                    'ipc_B',
+                                                                    'dp_FLOPS_per_node_B',
+                                                                    'bw_per_node_B',])
+
+    prediction = model.predict(dummy_feature_vector)[0]
+
+    if prediction < 0.9:
+        type_from_ml = 'find=compact'
+    elif prediction > 1.1:
+        type_from_ml = 'find=spread'
+    else:
+        type_from_ml = 'find=no_pred'
 
     return type_from_ml
 
