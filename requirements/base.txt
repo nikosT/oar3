@@ -19,3 +19,4 @@ clustershell
 joblib
 numpy
 pandas
+scikit-learn
