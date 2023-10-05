@@ -15,7 +15,7 @@ def model(resource_request, properties):
     import pandas as pd
     import numpy as np
 
-    model = load('./trainedGradientBoostingRegressor.model')
+    model = load('/etc/oar/admission_rules.d/trainedGradientBoostingRegressor.model')
     dummy_feature_vector = pd.DataFrame(np.zeros((1, 12)), columns=['avg_total_time_A',
                                                                     'compute_time_A',
                                                                     'mpi_time_A',
@@ -36,7 +36,7 @@ def model(resource_request, properties):
     elif prediction > 1.1:
         type_from_ml = 'find=spread'
     else:
-        type_from_ml = 'find=no_pred'
+        type_from_ml = 'find=no_pref'
 
     return type_from_ml
 
