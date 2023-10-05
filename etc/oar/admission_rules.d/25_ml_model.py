@@ -36,7 +36,7 @@ def model(resource_request, properties):
     elif prediction > 1.1:
         type_from_ml = 'find=spread'
     else:
-        type_from_ml = 'find=no_pred'
+        type_from_ml = 'find=no_pref'
 
     return type_from_ml
 
