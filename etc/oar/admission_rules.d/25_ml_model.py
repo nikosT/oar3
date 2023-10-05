@@ -15,7 +15,7 @@ def model(resource_request, properties):
     import pandas as pd
     import numpy as np
 
-    model = load('./trainedGradientBoostingRegressor.model')
+    model = load('/etc/oar/admission_rules.d/trainedGradientBoostingRegressor.model')
     dummy_feature_vector = pd.DataFrame(np.zeros((1, 12)), columns=['avg_total_time_A',
                                                                     'compute_time_A',
                                                                     'mpi_time_A',

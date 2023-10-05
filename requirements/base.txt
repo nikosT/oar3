@@ -17,3 +17,4 @@ toml
 joblib
 numpy
 pandas
+scikit-learn
