@@ -1,6 +1,7 @@
 
 # check variables
-print(resource_request, properties, types) # debug
+print(resource_request, properties) # debug
+print(f"Types from previous admission rules = {types}")
 
 
 def model(resource_request, properties, command):
@@ -70,8 +71,8 @@ def model(resource_request, properties, command):
 # if yes, let it be
 # if no, use ml model to define it
 # this is: if no
-if not (('find=compact' in types) or ('find=spread' in types) or ('find=no_pref' in types)) or\
-   not (('compact' in types) or ('spread' in types) or ('no_pref' in types)):
+if ('find=compact' not in types) and ('find=spread' not in types) and ('find=no_pref' not in types) and\
+   ('compact' not in types) and ('spread' not in types) and ('no_pref' not in types):
 
     # type_from_ml can be: "find=compact" or "find=spread" or "find=no_pref"
     type_from_ml = model(resource_request, properties, command)
