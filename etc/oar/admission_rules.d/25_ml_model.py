@@ -1,71 +1,78 @@
 
 # check variables
-print(resource_request, properties) # debug
-print(f"Types from previous admission rules = {types}")
+#print(resource_request, properties) # debug
+#print(f"Types from previous admission rules = {types}")
 
 
-def model(resource_request, properties, command):
+def model(config, resource_request, properties, job_name):
     """
     Return: String
     "find=compact" or "find=spread" or "find=no_pref"
     """
-    type_from_ml = 'find=no_pref'
-
-    # placeholder functionality of ML
-    from joblib import load
     import pandas as pd
     import numpy as np
+    from oar.lib.resource_handling import get_ml_model, get_performance_counters
+    import oar.lib.globals
+    import sqlalchemy.orm
 
-    # Import the NAS 'database'
-    db = pd.read_csv('/etc/oar/admission_rules.d/nas-oar-db.csv')
+    type_from_ml = 'find=compact'
 
-    # Check if it is a NAS benchmark
-    # bench = command.split('.')
-    # if len(bench) < 3:
-    #     print("We have to gather perf counters")
-    #     return type_from_ml
-    # else:
-    #     app, cls, procs = bench
+    try:
+        # initialize a session (a connector) to DB
+        engine = oar.lib.globals.init_db(config)
+        session_factory = sqlalchemy.orm.sessionmaker(bind=engine)
+        scoped = sqlalchemy.orm.scoped_session(session_factory)
+        session = scoped()
 
-    # Check if the executable's name exists inside the db
-    indices = db[db['name'].str.contains(command)].index.values
+        (name, procs) = job_name.split('-')
 
-    if len(indices) == 0:
-        print("The executable is not inside the database")
-        vector = np.zeros((1, 12))
-    else:
-        print(f"{command} exists inside the db!")
-        vector = np.append(db.iloc[indices, 1:].values[0], np.zeros(6)).reshape((1, 12))
+        perf_counters = get_performance_counters(session, name=name, procs=procs)
 
-    # Building a feature vector
-    feature_vector = pd.DataFrame(vector, columns=['avg_total_time_A',
-                                                   'compute_time_A',
-                                                   'mpi_time_A',
-                                                   'ipc_A',
-                                                   'dp_FLOPS_per_node_A',
-                                                   'bw_per_node_A',
-                                                   'avg_total_time_B',
-                                                   'compute_time_B',
-                                                   'mpi_time_B',
-                                                   'ipc_B',
-                                                   'dp_FLOPS_per_node_B',
-                                                   'bw_per_node_B',])
+        if perf_counters is None:
+            print(f"No performance counters found for the {name}")
+            vector = np.zeros((1,12))
+        else:
+            print(f"Performance counters found for the {name}")
+            data = perf_counters[['avg_total_time',
+                                  'compute_time',
+                                  'mpi_time',
+                                  'ipc',
+                                  'dp_flops_per_node',
+                                  'bw_per_node']]
+            vector = np.append(data.values[0], np.zeros(6)).reshape((1, 12))
 
-    # Loading the ML model
-    model = load('/etc/oar/admission_rules.d/trainedGradientBoostingRegressor.model')
+        # Building a feature vector
+        feature_vector = pd.DataFrame(vector, columns=['avg_total_time_A',
+                                                       'compute_time_A',
+                                                       'mpi_time_A',
+                                                       'ipc_A',
+                                                       'dp_FLOPS_per_node_A',
+                                                       'bw_per_node_A',
+                                                       'avg_total_time_B',
+                                                       'compute_time_B',
+                                                       'mpi_time_B',
+                                                       'ipc_B',
+                                                       'dp_FLOPS_per_node_B',
+                                                       'bw_per_node_B',])
 
-    # Making a prediction
-    prediction = model.predict(feature_vector)[0]
+        # Loading the ML model
+        model = get_ml_model(session, 'iccs_v1')
 
-    if prediction < 0.9:
-        type_from_ml = 'find=compact'
-    elif prediction > 1.1:
-        type_from_ml = 'find=spread'
-    else:
-        type_from_ml = 'find=no_pref'
+        # Making a prediction
+        prediction = model.predict(feature_vector)[0]
 
-    return type_from_ml
+        if prediction < 0.9:
+            type_from_ml = 'find=compact'
+        elif prediction > 1.1:
+            type_from_ml = 'find=spread'
+        else:
+            type_from_ml = 'find=no_pref'
 
+        print('Prediction made by ML model')
+        return type_from_ml
+
+    except:
+        return type_from_ml
 
 # check if user wants specifically a particular tag
 # if yes, let it be
@@ -75,8 +82,9 @@ if ('find=compact' not in types) and ('find=spread' not in types) and ('find=no_
    ('compact' not in types) and ('spread' not in types) and ('no_pref' not in types):
 
     # type_from_ml can be: "find=compact" or "find=spread" or "find=no_pref"
-    type_from_ml = model(resource_request, properties, command)
+    type_from_ml = model(config, resource_request, properties, name)
 
-    # append type in submission
-    types.append(type_from_ml)
+
     print(types)
+
+

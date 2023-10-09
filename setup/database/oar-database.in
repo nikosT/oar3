@@ -333,6 +333,8 @@ sub create_database() {
                                               queues,
                                               resource_logs,
                                               resources,
+                                              resource_allocation_ml,
+                                              performance_counters,
                                               walltime_change,
                                               admission_rules_id_seq,
                                               event_logs_event_id_seq,
