@@ -326,3 +326,26 @@ CREATE TABLE walltime_change (
   PRIMARY KEY (job_id)
 );
 CREATE INDEX walltime_change_job_id ON walltime_change (job_id);
+
+CREATE TABLE resource_allocation_ml (
+  name varchar(100) NOT NULL,
+  description varchar(255) NOT NULL,
+  data bytea default NULL,
+  PRIMARY KEY (name)
+);
+CREATE INDEX resource_allocation_ml_name ON resource_allocation_ml (name);
+
+CREATE TABLE performance_counters (
+  id bigserial,
+  name varchar(100) NOT NULL,
+  procs integer default '0',
+  app_type varchar(100) NOT NULL,
+  avg_total_time float default '0',
+  compute_time float default '0',
+  mpi_time float default '0',
+  ipc float default '0',
+  dp_flops_per_node float default '0',
+  bw_per_node float default '0',
+  PRIMARY KEY  (id)
+);
+CREATE INDEX performance_counters_name ON performance_counters (name);

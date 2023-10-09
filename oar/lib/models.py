@@ -8,11 +8,13 @@ from sqlalchemy import (  # , exc
     Column,
     Index,
     Integer,
+    Float,
     String,
     Table,
     Text,
     inspect,
     text,
+    LargeBinary,
 )
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import DeclarativeMeta, declarative_base
@@ -471,6 +473,29 @@ class WalltimeChange(Model):
         CheckConstraint(force.in_(["NO", "YES"])),
         CheckConstraint(delay_next_jobs.in_(["NO", "YES"])),
     )
+
+
+class ResourceAllocationML(Model):
+    __tablename__ = "resource_allocation_ml"
+
+    name = Column(String(100), index=True, primary_key=True)
+    description = Column(String(255))
+    data = Column(LargeBinary) # blob data (joblib format)
+
+
+class PerformanceCounters(Model):
+    __tablename__ = "performance_counters"
+
+    id = Column("id", Integer, primary_key=True)
+    name = Column(String(100), index=True)
+    procs = Column(Integer, server_default="0")
+    app_type = Column(String(100), index=True)
+    avg_total_time = Column(Float, server_default="0")
+    compute_time = Column(Float, server_default="0")
+    mpi_time = Column(Float, server_default="0")
+    ipc = Column(Float, server_default="0")
+    dp_flops_per_node = Column(Float, server_default="0")
+    bw_per_node = Column(Float, server_default="0")
 
 
 def all_models():
