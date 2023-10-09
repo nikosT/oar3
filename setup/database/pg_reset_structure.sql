@@ -11,6 +11,8 @@ DROP TABLE frag_jobs;
 DROP TABLE assigned_resources;
 DROP TABLE resources;
 DROP TABLE resource_logs;
+DROP TABLE resource_allocation_ml;
+DROP TABLE performance_counters;
 DROP TABLE queues;
 DROP TABLE scheduler;
 DROP TABLE admission_rules;
