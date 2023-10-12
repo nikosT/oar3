@@ -69,6 +69,7 @@ def model(config, resource_request, properties, job_name):
             type_from_ml = 'find=no_pref'
 
         print('Prediction made by ML model')
+        print(type_from_ml)
         return type_from_ml
 
     except:
@@ -83,8 +84,4 @@ if ('find=compact' not in types) and ('find=spread' not in types) and ('find=no_
 
     # type_from_ml can be: "find=compact" or "find=spread" or "find=no_pref"
     type_from_ml = model(config, resource_request, properties, name)
-
-
-    print(types)
-
-
+    types.append(type_from_ml)
