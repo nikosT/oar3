@@ -1,8 +1,11 @@
-
-def estimate_job_nb_resources_in_spread(session, config, resource_request, j_properties):
+def estimate_job_nb_resources_in_spread(
+    session, config, resource_request, j_properties
+):
     """returns an array with an estimation of the number of resources that can be used by a job:
     (resources_available, [(nbresources => int, walltime => int)])
     """
+    from sqlalchemy import exc
+
     # estimate_job_nb_resources
     estimated_nb_resources = []
     is_resource_available = False
@@ -79,9 +82,11 @@ def estimate_job_nb_resources_in_spread(session, config, resource_request, j_pro
 
             cts_resources_itvs = constraints & resources_itvs
 
-            for soc in resource_set.hierarchy['cpu']:
+            for soc in resource_set.hierarchy["cpu"]:
                 avail_cores = soc & cts_resources_itvs
-                cts_resources_itvs -= ProcSet(*avail_cores[int(len(soc)/2):len(soc)])
+                cts_resources_itvs -= ProcSet(
+                    *avail_cores[int(len(soc) / 2) : len(soc)]
+                )
 
             res_itvs = find_resource_hierarchies_scattered(
                 cts_resources_itvs, hy_levels, hy_nbs
@@ -102,11 +107,15 @@ def estimate_job_nb_resources_in_spread(session, config, resource_request, j_pro
     return ((0, ""), is_resource_available, estimated_nb_resources)
 
 
-if 'spread' in types:
-    types = list(map(lambda t: t.replace('spread','find=spread'),types))
+if "spread" in types:
+    types = list(map(lambda t: t.replace("spread", "find=spread"), types))
 
-    import oar.lib.globals
-    import sqlalchemy.orm
-
-    if estimate_job_nb_resources_in_spread(session, config, resource_request, properties)[0][0] < 0:
-        raise Exception("# ADMISSION RULE> There are not enough resources for your request using the spread method")
+    if (
+        estimate_job_nb_resources_in_spread(
+            session, config, resource_request, properties
+        )[0][0]
+        < 0
+    ):
+        raise Exception(
+            "# ADMISSION RULE> There are not enough resources for your request using the spread method"
+        )
