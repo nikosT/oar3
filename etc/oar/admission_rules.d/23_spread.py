@@ -108,11 +108,5 @@ if 'spread' in types:
     import oar.lib.globals
     import sqlalchemy.orm
 
-    engine = oar.lib.globals.init_db(config)
-
-    session_factory = sqlalchemy.orm.sessionmaker(bind=engine)
-    scoped = sqlalchemy.orm.scoped_session(session_factory)
-    session = scoped()
-
     if estimate_job_nb_resources_in_spread(session, config, resource_request, properties)[0][0] < 0:
         raise Exception("# ADMISSION RULE> There are not enough resources for your request using the spread method")
