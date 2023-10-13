@@ -1,17 +1,18 @@
 from procset import ProcSet
+
 from oar.lib.globals import get_logger
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
-import oar
 
 logger = get_logger("oar.custom_scheduling")
 
-'''
-Find the path leading to a resource within the hierarchy.
-e.g. hy = {'nodes': [ProcSet((0, 7)), ProcSet((8, 15))], 'cpu': [ProcSet((0, 3)), ProcSet((4, 7)), ProcSet((8, 11)), ProcSet((12, 15))], 'core': [ProcSet(0), ProcSet(1), ProcSet(2), ProcSet(3), ProcSet(4), ProcSet(5), ProcSet(6), ProcSet(7), ProcSet(8), ProcSet(9), ProcSet(10), ProcSet(11), ProcSet(12), ProcSet(13), ProcSet(14), ProcSet(15)], 'resource_id': [ProcSet(0), ProcSet(1), ProcSet(2), ProcSet(3), ProcSet(4), ProcSet(5), ProcSet(6), ProcSet(7), ProcSet(8), ProcSet(9), ProcSet(10), ProcSet(11), ProcSet(12), ProcSet(13), ProcSet(14), ProcSet(15)]}
-e.g. itvs = ProcSet((8,11))
-path(itvs, hy) = [ProcSet((8,15)), ProcSet((8,11))]
-'''
-def path(itvs, hy, reverse = True):
+
+def path(itvs, hy, reverse=True):
+    """
+    Find the path leading to a resource within the hierarchy.
+    e.g. hy = {'nodes': [ProcSet((0, 7)), ProcSet((8, 15))], 'cpu': [ProcSet((0, 3)), ProcSet((4, 7)), ProcSet((8, 11)), ProcSet((12, 15))], 'core': [ProcSet(0), ProcSet(1), ProcSet(2), ProcSet(3), ProcSet(4), ProcSet(5), ProcSet(6), ProcSet(7), ProcSet(8), ProcSet(9), ProcSet(10), ProcSet(11), ProcSet(12), ProcSet(13), ProcSet(14), ProcSet(15)], 'resource_id': [ProcSet(0), ProcSet(1), ProcSet(2), ProcSet(3), ProcSet(4), ProcSet(5), ProcSet(6), ProcSet(7), ProcSet(8), ProcSet(9), ProcSet(10), ProcSet(11), ProcSet(12), ProcSet(13), ProcSet(14), ProcSet(15)]}
+    e.g. itvs = ProcSet((8,11))
+    path(itvs, hy) = [ProcSet((8,15)), ProcSet((8,11))]
+    """
     acc = []
     for lv in hy:
         for rsc in hy[lv]:
@@ -19,9 +20,10 @@ def path(itvs, hy, reverse = True):
                 acc.append(rsc)
                 break
 
-    return sorted(acc, key = lambda x: len(x), reverse = reverse)
+    return sorted(acc, key=lambda x: len(x), reverse=reverse)
 
-def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse = True):
+
+def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -46,15 +48,28 @@ def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse = True):
             hy_nbs.append(n)
 
         itvs_cts_slots = constraints & itvs_slots
-        # Select unused resources first (top-down). 
-        hy_levels = map(lambda x: sorted(x, key = lambda i: [len(prev & itvs_cts_slots) for prev in path(i,hy,reverse=reverse)], reverse = reverse), hy_levels)
-        res = find_resource_hierarchies_scattered(itvs_cts_slots, list(hy_levels), hy_nbs)
+
+        # Select unused resources first (top-down).
+        hy_levels = map(
+            lambda x: sorted(
+                x,
+                key=lambda i: [
+                    len(prev & itvs_cts_slots) for prev in path(i, hy, reverse=reverse)
+                ],
+                reverse=reverse,
+            ),
+            hy_levels,
+        )
+        res = find_resource_hierarchies_scattered(
+            itvs_cts_slots, list(hy_levels), hy_nbs
+        )
         if res:
             result = result | res
         else:
             return ProcSet()
 
     return result
+
 
 def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
@@ -82,15 +97,26 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
 
         itvs_cts_slots = constraints & itvs_slots
 
-        itvs_cts_slots2=itvs_cts_slots.copy()
+        itvs_cts_slots2 = itvs_cts_slots.copy()
 
-        for soc in hy['cpu']:
+        for soc in hy["cpu"]:
             avail_cores = soc & itvs_cts_slots
-            itvs_cts_slots -= ProcSet(*avail_cores[int(len(soc)/2):len(soc)])
+            itvs_cts_slots -= ProcSet(*avail_cores[int(len(soc) / 2) : len(soc)])
 
-        # Select unused resources first (top-down). 
+        # Select unused resources first (top-down).
         try:
-            hy_levels = list(map(lambda x: sorted(x, key = lambda i: [len(prev & itvs_cts_slots2) for prev in path(i,hy)], reverse = True), hy_levels))
+            hy_levels = list(
+                map(
+                    lambda x: sorted(
+                        x,
+                        key=lambda i: [
+                            len(prev & itvs_cts_slots2) for prev in path(i, hy)
+                        ],
+                        reverse=True,
+                    ),
+                    hy_levels,
+                )
+            )
         except Exception as e:
             logger.info(e)
 
@@ -102,6 +128,7 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
             return ProcSet()
 
     return result
+
 
 def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
@@ -117,5 +144,4 @@ def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
-    return compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse = False)
-
+    return compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False)

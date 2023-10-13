@@ -5,8 +5,11 @@ from typing import Any, List
 
 from sqlalchemy.orm import Session
 import io
+import os
 
-from sqlalchemy import distinct, func, or_, and_, text
+import pandas as pd
+from joblib import load
+from sqlalchemy import and_, distinct, func, or_, text
 from sqlalchemy.orm.exc import NoResultFound
 
 import oar.lib.tools as tools
@@ -19,14 +22,11 @@ from oar.lib.models import (
     Job,
     JobType,
     MoldableJobDescription,
-    Resource,
-    ResourceLog,
-    ResourceAllocationML,
     PerformanceCounters,
+    Resource,
+    ResourceAllocationML,
+    ResourceLog,
 )
-
-from joblib import load
-import pandas as pd
 
 State_to_num = {"Alive": 1, "Absent": 2, "Suspected": 3, "Dead": 4}
 
@@ -538,8 +538,8 @@ def resources_creation(session, node_name, nb_nodes, nb_core=1, nb_cpu=1, vfacto
             session,
             network_address=f"{node_name}{int(i/(nb_core * vfactor)+1)}",
             cpuset=i % nb_core,
-            core=i+1,
-            cpu=i//(nb_core//nb_cpu)+1,
+            core=i + 1,
+            cpu=i // (nb_core // nb_cpu) + 1,
             state="Alive",
         )
     session.commit()
@@ -547,7 +547,6 @@ def resources_creation(session, node_name, nb_nodes, nb_core=1, nb_cpu=1, vfacto
 
 def ml_model_creation(session, name, description, path):
 
-#    data = load(path)
     with open(path, "rb") as file:
         data = file.read()
 
@@ -558,7 +557,11 @@ def ml_model_creation(session, name, description, path):
 
 def get_ml_model(session, name):
 
-    result = session.query(ResourceAllocationML).filter(ResourceAllocationML.name == name).one()
+    result = (
+        session.query(ResourceAllocationML)
+        .filter(ResourceAllocationML.name == name)
+        .one()
+    )
 
     return load(io.BytesIO(result.data))
 
@@ -569,16 +572,18 @@ def performance_counters_creation(session, path):
 
     for index, row in db.iterrows():
 
-        PerformanceCounters.create(session,
-                                   name=row['name'],
-                                   procs=row['procs'],
-                                   app_type=row['app_type'],
-                                   avg_total_time=row['avg_total_time'],
-                                   compute_time=row['compute_time'],
-                                   mpi_time=row['mpi_time'],
-                                   ipc=row['ipc'],
-                                   dp_flops_per_node=row['dp_flops_per_node'],
-                                   bw_per_node=row['bw_per_node'])
+        PerformanceCounters.create(
+            session,
+            name=row["name"],
+            procs=row["procs"],
+            app_type=row["app_type"],
+            avg_total_time=row["avg_total_time"],
+            compute_time=row["compute_time"],
+            mpi_time=row["mpi_time"],
+            ipc=row["ipc"],
+            dp_flops_per_node=row["dp_flops_per_node"],
+            bw_per_node=row["bw_per_node"],
+        )
 
     session.commit()
 
@@ -588,17 +593,27 @@ def get_performance_counters(session, id=None, name=None, procs=None):
     try:
 
         if id:
-            result = session.query(PerformanceCounters).filter(PerformanceCounters.id == id).one()
+            result = (
+                session.query(PerformanceCounters)
+                .filter(PerformanceCounters.id == id)
+                .one()
+            )
 
         elif name and procs:
-            result = session.query(PerformanceCounters).filter(and_(PerformanceCounters.name == name, PerformanceCounters.procs == procs)).one()
-
+            result = (
+                session.query(PerformanceCounters)
+                .filter(
+                    and_(
+                        PerformanceCounters.name == name,
+                        PerformanceCounters.procs == procs,
+                    )
+                )
+                .one()
+            )
         else:
             return None
 
     except NoResultFound:
         return None
 
-
     return pd.DataFrame([result.__dict__])
-  

@@ -6,15 +6,15 @@ from sqlalchemy import (  # , exc
     BigInteger,
     CheckConstraint,
     Column,
+    Float,
     Index,
     Integer,
-    Float,
+    LargeBinary,
     String,
     Table,
     Text,
     inspect,
     text,
-    LargeBinary,
 )
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import DeclarativeMeta, declarative_base
@@ -474,7 +474,7 @@ class ResourceAllocationML(Model):
 
     name = Column(String(100), index=True, primary_key=True)
     description = Column(String(255))
-    data = Column(LargeBinary) # blob data (joblib format)
+    data = Column(LargeBinary)  # blob data (joblib format)
 
 
 class PerformanceCounters(Model):

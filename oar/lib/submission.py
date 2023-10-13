@@ -28,16 +28,19 @@ from oar.lib.models import (
     Resource,
 )
 from oar.lib.resource import ResourceSet
-from oar.lib.tools import sql_to_duration  # noqa
 from oar.lib.tools import (
     PIPE,
     Popen,
     format_job_message_text,
     get_date,
     hms_str_to_duration,
+    sql_to_duration,
     sql_to_local,
-    sql_to_duration
 )
+
+# dummy action to bypass checks
+# because func is used later on another file
+_dummy = sql_to_duration.__name__
 
 
 def lstrip_none(s):
