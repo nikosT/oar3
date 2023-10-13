@@ -305,8 +305,8 @@ CREATE TABLE resources (
   available_upto integer NOT NULL default '2147483647',
   last_available_upto integer NOT NULL default '0',
   drain varchar(3) check (drain in ('YES','NO')) NOT NULL default 'NO',
-  cpu varchar(255) NOT NULL default '1',
-  core varchar(255) NOT NULL default '1',
+  core integer NOT NULL default '1',
+  cpu integer NOT NULL default '1',
   PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);
