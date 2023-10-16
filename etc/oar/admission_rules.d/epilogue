@@ -1,0 +1,24 @@
+#!/bin/bash
+# $Id$
+
+# prologue arguments
+# Script is run under uid of oar who is sudo
+# argv[1] is the jobid
+# argv[2] is the user's name
+# argv[3] is the file which contains the list of nodes used
+# argv[4] is the job script name if exists
+
+# Redirect stdout and stderr in a file
+exec &> /tmp/oar_epilogue.log
+
+
+if [ -f "/tmp/$1_performance_counters" ]; then
+
+    echo "Gathering $1_performance_counters"
+
+fi
+
+
+
+
+exit
