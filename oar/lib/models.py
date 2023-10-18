@@ -364,8 +364,6 @@ class Resource(DeferredReflectionModel):
     available_upto = Column(Integer, server_default="2147483647")
     last_available_upto = Column(Integer, server_default="0")
     drain = Column(String(3), server_default="NO")
-    core = Column(Integer, server_default="1")
-    cpu = Column(Integer, server_default="1")
 
 
 class Job(DeferredReflectionModel):
