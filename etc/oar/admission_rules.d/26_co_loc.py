@@ -107,8 +107,8 @@ def estimate_job_nb_resources_in_spread(
     return ((0, ""), is_resource_available, estimated_nb_resources)
 
 
-if "r_spread" in types:
-    types = list(map(lambda t: t.replace("r_spread", "find=r_spread"), types))
+if "co_loc" in types:
+    types = list(map(lambda t: t.replace("co_loc", "find=co_loc"), types))
 
     if (
         estimate_job_nb_resources_in_spread(

@@ -130,7 +130,7 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     return result
 
 
-def r_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
