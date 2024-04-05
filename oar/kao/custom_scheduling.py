@@ -162,3 +162,72 @@ def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
     return compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False)
+
+
+def f_compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
+    """
+    Given a job resource request and a set of resources this function tries to find a matching allocation.
+
+    .. note::
+        This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
+
+    :param itvs_slots: A procset of the resources available for the allocation
+    :type itvs_slots: :class:`procset.ProcSet`
+    :param hy_res_rqts: The job's request
+    :param hy: The definition of the resources hierarchy
+    :return [ProcSet]: \
+            The allocation if found, otherwise an empty :class:`procset.ProcSet`
+    """
+    avail_procset = compact(
+        itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=reverse
+    )
+
+    # if no allocation space is found (by compact policy)
+    # fallback to spread policy
+    if len(avail_procset) == 0:
+        return spread(itvs_slots, hy_res_rqts, hy, beginning_slotset)
+    else:
+        return avail_procset
+
+
+def f_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
+    """
+    Given a job resource request and a set of resources this function tries to find a matching allocation.
+
+    .. note::
+        This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
+
+    :param itvs_slots: A procset of the resources available for the allocation
+    :type itvs_slots: :class:`procset.ProcSet`
+    :param hy_res_rqts: The job's request
+    :param hy: The definition of the resources hierarchy
+    :return [ProcSet]: \
+            The allocation if found, otherwise an empty :class:`procset.ProcSet`
+    """
+    avail_procset = spread(
+        itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=reverse
+    )
+
+    # if no allocation space is found (by compact policy)
+    # fallback to spread
+    if len(avail_procset) == 0:
+        return compact(itvs_slots, hy_res_rqts, hy, beginning_slotset)
+    else:
+        return avail_procset
+
+
+def f_co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+    """
+    Given a job resource request and a set of resources this function tries to find a matching allocation.
+
+    .. note::
+        This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
+
+    :param itvs_slots: A procset of the resources available for the allocation
+    :type itvs_slots: :class:`procset.ProcSet`
+    :param hy_res_rqts: The job's request
+    :param hy: The definition of the resources hierarchy
+    :return [ProcSet]: \
+            The allocation if found, otherwise an empty :class:`procset.ProcSet`
+    """
+    return f_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True)
