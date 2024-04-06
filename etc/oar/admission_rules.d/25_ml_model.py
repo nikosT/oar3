@@ -199,19 +199,18 @@ def model(session, config, resource_request, properties, job_name):
         return type_from_ml
 
 
-# check if user wants specifically a particular tag
-# if yes, let it be
-# if no, use ml model to define it
-# this is: if no
-if (
-    ("find=compact" not in types)
-    and ("find=spread" not in types)
-    and ("find=no_pref" not in types)
-    and ("compact" not in types)
-    and ("spread" not in types)
-    and ("no_pref" not in types)
-):
+# make sure that user specifies "ml" without
+# "compact", "spread", or "no_pref" tag
+if "ml" in types:
+    if (
+        ("find=compact" not in types)
+        and ("find=spread" not in types)
+        and ("find=no_pref" not in types)
+        and ("compact" not in types)
+        and ("spread" not in types)
+        and ("no_pref" not in types)
+    ):
 
-    # type_from_ml can be: "find=compact" or "find=spread" or "find=no_pref"
-    type_from_ml = model(session, config, resource_request, properties, name)
-    types.append(type_from_ml)
+        # type_from_ml can be: "find=compact" or "find=spread" or "find=no_pref"
+        type_from_ml = model(session, config, resource_request, properties, name)
+        types.append(type_from_ml)

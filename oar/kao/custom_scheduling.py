@@ -71,7 +71,7 @@ def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     return result
 
 
-def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -112,7 +112,7 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
                         key=lambda i: [
                             len(prev & itvs_cts_slots2) for prev in path(i, hy)
                         ],
-                        reverse=True,
+                        reverse=not reverse,
                     ),
                     hy_levels,
                 )
@@ -128,6 +128,23 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
             return ProcSet()
 
     return result
+
+
+def r_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+    """
+    Given a job resource request and a set of resources this function tries to find a matching allocation.
+
+    .. note::
+        This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
+
+    :param itvs_slots: A procset of the resources available for the allocation
+    :type itvs_slots: :class:`procset.ProcSet`
+    :param hy_res_rqts: The job's request
+    :param hy: The definition of the resources hierarchy
+    :return [ProcSet]: \
+            The allocation if found, otherwise an empty :class:`procset.ProcSet`
+    """
+    return spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True)
 
 
 def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
