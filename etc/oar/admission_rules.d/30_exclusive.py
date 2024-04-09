@@ -1,4 +1,5 @@
 if "exclusive" in types:
+
     import math
     resource_set = ResourceSet(session, config)
     resources_itvs = resource_set.roid_itvs
