@@ -1,13 +1,5 @@
 if "exclusive" in types:
     import math
-<<<<<<< HEAD
-    resource_set = ResourceSet(session, config)
-    resources_itvs = resource_set.roid_itvs
-
-    total_nodes=len(resource_set.hierarchy['network_address'])
-    total_cores=len(resource_set.hierarchy['core'])
-    cores_per_node=total_cores//total_nodes
-=======
 
     resource_set = ResourceSet(session, config)
     resources_itvs = resource_set.roid_itvs
@@ -15,7 +7,6 @@ if "exclusive" in types:
     total_nodes = len(resource_set.hierarchy["network_address"])
     total_cores = len(resource_set.hierarchy["core"])
     cores_per_node = total_cores // total_nodes
->>>>>>> origin/devel
 
     for mld_idx, mld_resource_request in enumerate(resource_request):
         resource_desc, walltime = mld_resource_request
@@ -26,4 +17,3 @@ if "exclusive" in types:
                     resource_value["value"] = str(
                         math.ceil(float(resource_value["value"]) / cores_per_node)
                     )
->>>>>>> origin/devel
