@@ -21,8 +21,7 @@ jobs:
           matrix:
             debian:
               - { BRANCH_NAME: "debian/3.0", DEBIAN_NAME: "bookworm" }
-              # Branch bullseye not maintained
-              # - { BRANCH_NAME: "bullseye/3.0", DEBIAN_NAME: "bullseye" }
+              - { BRANCH_NAME: "bullseye/3.0", DEBIAN_NAME: "bullseye" }
       steps:
         - name: Check out repository code
           uses: actions/checkout@v2

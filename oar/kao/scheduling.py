@@ -152,7 +152,7 @@ def find_first_suitable_contiguous_slots_quotas(
         sid_left = slots_set.slot_id_at(min_start_time)
 
     sid_right = sid_left
-    for (slot_begin, slot_end) in slots_set.traverse_with_width(
+    for slot_begin, slot_end in slots_set.traverse_with_width(
         walltime, start_id=sid_left
     ):
         sid_left = slot_begin.id
@@ -260,7 +260,7 @@ def find_first_suitable_contiguous_slots_no_quotas(
         sid_left = slots_set.slot_id_at(min_start_time)
 
     sid_right = sid_left
-    for (slot_begin, slot_end) in slots_set.traverse_with_width(
+    for slot_begin, slot_end in slots_set.traverse_with_width(
         walltime, start_id=sid_left
     ):
         sid_left = slot_begin.id

@@ -6,4 +6,6 @@ if "no_pref" in types:
         for prop_res in resource_desc:
             for resource_value in prop_res["resources"]:
                 if not resource_value["resource"] == "core":
-                    raise Exception("# ADMISSION RULE> Error: If type no_pref is given, only core can be used as resource type.")
+                    raise Exception(
+                        "# ADMISSION RULE> Error: If type no_pref is given, only core can be used as resource type."
+                    )

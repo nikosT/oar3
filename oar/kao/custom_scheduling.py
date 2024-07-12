@@ -1,10 +1,12 @@
+import itertools
+
 from procset import ProcSet
 
 from oar.lib.globals import get_logger
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
-import itertools
 
 logger = get_logger("oar.custom_scheduling")
+
 
 def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     """
@@ -32,15 +34,29 @@ def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
 
         itvs_cts_slots = constraints & itvs_slots
 
-        hy_nodes = sorted(hy['network_address'], key=lambda i: len(i & itvs_cts_slots), reverse=reverse)
+        # create a nodes Procset list sorted by min/max free cores
+        hy_nodes = sorted(
+            hy["network_address"],
+            key=lambda i: len(i & itvs_cts_slots),
+            reverse=reverse,
+        )
 
         hy_levels = []
         for node in hy_nodes:
-            n_cpus=list(filter(lambda p: p.issubset(node),hy['cpu']))
-            n_cpus=sorted(n_cpus, key=lambda i: len(i & itvs_cts_slots), reverse=reverse)
-            hy_levels+=list(map(ProcSet, itertools.chain.from_iterable(map(iter, n_cpus))))
+            # collect cpu Procset for particular node
+            n_cpus = list(filter(lambda p: p.issubset(node), hy["cpu"]))
+            # sort cpu Procset list sorted by min/max free cores
+            n_cpus = sorted(
+                n_cpus, key=lambda i: len(i & itvs_cts_slots), reverse=reverse
+            )
+            # map cpu Procset to core procset
+            hy_levels += list(
+                map(ProcSet, itertools.chain.from_iterable(map(iter, n_cpus)))
+            )
 
-        hy_levels=[hy_levels]
+        # there is an Admission Rule that blocks other resources than core
+        # so only 1 resource type will be given
+        hy_levels = [hy_levels]
 
         res = find_resource_hierarchies_scattered(
             itvs_cts_slots, list(hy_levels), hy_nbs
@@ -87,15 +103,29 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
 
         # Select unused resources first (top-down).
         try:
-            hy_nodes = sorted(hy['network_address'], key=lambda i: len(i & itvs_cts_slots), reverse=reverse)
+            # create a nodes Procset list sorted by min/max free cores
+            hy_nodes = sorted(
+                hy["network_address"],
+                key=lambda i: len(i & itvs_cts_slots2),
+                reverse=reverse,
+            )
 
             hy_levels = []
             for node in hy_nodes:
-                n_cpus=list(filter(lambda p: p.issubset(node),hy['cpu']))
-                n_cpus=sorted(n_cpus, key=lambda i: len(i & itvs_cts_slots), reverse=reverse)
-                hy_levels+=list(map(ProcSet, itertools.chain.from_iterable(map(iter, n_cpus))))
+                # collect cpu Procset for particular node
+                n_cpus = list(filter(lambda p: p.issubset(node), hy["cpu"]))
+                # sort cpu Procset list sorted by min/max free cores
+                n_cpus = sorted(
+                    n_cpus, key=lambda i: len(i & itvs_cts_slots2), reverse=reverse
+                )
+                # map cpu Procset to core procset
+                hy_levels += list(
+                    map(ProcSet, itertools.chain.from_iterable(map(iter, n_cpus)))
+                )
 
-            hy_levels=[hy_levels]
+            # there is an Admission Rule that blocks other resources than core
+            # so only 1 resource type will be given
+            hy_levels = [hy_levels]
 
         except Exception as e:
             logger.info(e)

@@ -45,7 +45,7 @@ def find_first_suitable_contiguous_slots(
     else:
         sid_left = 0
 
-    for (slot_begin, slot_end) in slots_set.traverse_with_width(walltime):
+    for slot_begin, slot_end in slots_set.traverse_with_width(walltime):
         # find next contiguous slots_time
         itvs_avail = intersec_itvs_slots(slots, slot_begin.id, slot_end.id)
         itvs = find_resource_hierarchies_job(itvs_avail, hy_res_rqts, hy)

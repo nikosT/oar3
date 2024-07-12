@@ -115,7 +115,9 @@ if "f_co_loc" in types:
         for prop_res in resource_desc:
             for resource_value in prop_res["resources"]:
                 if not resource_value["resource"] == "core":
-                    raise Exception("# ADMISSION RULE> Error: If type f_co_loc is given, only core can be used as resource type.")
+                    raise Exception(
+                        "# ADMISSION RULE> Error: If type f_co_loc is given, only core can be used as resource type."
+                    )
 
     if (
         estimate_job_nb_resources_in_spread(

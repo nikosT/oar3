@@ -1,15 +1,13 @@
 # coding: utf-8
 """ Functions to handle resource"""
-import os
-from typing import Any, List
-
-from sqlalchemy.orm import Session
 import io
 import os
+from typing import Any, List
 
 import pandas as pd
 from joblib import load
 from sqlalchemy import and_, distinct, func, or_, text
+from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
 import oar.lib.tools as tools
@@ -509,9 +507,11 @@ def get_resources_state(
     )
     res = [
         {
-            r.id: "Standby"
-            if (r.state == "Absent") and (r.available_upto >= date)
-            else r.state
+            r.id: (
+                "Standby"
+                if (r.state == "Absent") and (r.available_upto >= date)
+                else r.state
+            )
         }
         for r in result
     ]

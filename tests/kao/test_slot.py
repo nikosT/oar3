@@ -351,7 +351,7 @@ def test_traverse(start, end, answer):
 
     ss = SlotSet(slots)
 
-    for (slot, check_id) in zip(ss.traverse_id(start, end), answer):
+    for slot, check_id in zip(ss.traverse_id(start, end), answer):
         assert slot.id == check_id
 
 
