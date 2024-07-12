@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "oar"
-version = "3.0.0.dev10"
+version = "3.0.0.dev13"
 description = "OAR-ICCS: Versatile Resource and Job Manager (performance-oriented)"
-authors = ["Alexios Papavasileiou", "Stratos Karapanagiotis", "Nikolaos Triantafyllis"]
-license = "GPL-3.0"
+authors = ["Olivier Richard", "Adrien Faure", "Salem Harrache", "Nikolaos Triantafyllis", "Alexios Papavasileiou", "Stratos Karapanagiotis"]
+license = "GPL-2.0-or-later"
 classifiers=[
     "Development Status :: 5 - Beta",
     "License :: OSI Approved :: BSD License",
