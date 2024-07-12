@@ -105,7 +105,7 @@ def oarproperty(
                 if check_property_name(cmd_ret, prop_toadd):
                     return cmd_ret
                 if prop_toadd in properties:
-                    if varchar and (type(columns[prop_toadd]) != VARCHAR):
+                    if varchar and not isinstance(columns[prop_toadd], VARCHAR):
                         cmd_ret.error(
                             "Property '{}' already exists but with type mismatch.".format(
                                 prop_toadd

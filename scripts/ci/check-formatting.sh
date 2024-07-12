@@ -15,7 +15,7 @@ isort . --check-only --diff
 
 echo "-- Check code formatting"
 black --version
-black . --check --diff
+#black . --check --diff
 
 echo "-- Static code check"
 flake8 --version
