@@ -6,6 +6,7 @@ import copy
 from typing import Any, Tuple
 
 from procset import ProcSet
+from sqlalchemy.orm import Session
 
 from oar.kao.quotas import Quotas
 from oar.kao.slot import Slot, SlotSet, intersec_itvs_slots, intersec_ts_ph_itvs_slots
@@ -82,13 +83,14 @@ def set_slots_with_prev_scheduled_jobs(
             slot_set.split_slots_jobs(jobs_slotsets[ss_name])
 
 
-def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
+def find_resource_hierarchies_job(session, itvs_slots, hy_res_rqts, hy):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -118,13 +120,14 @@ def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
 
 
 def find_first_suitable_contiguous_slots_quotas(
-    slots_set: SlotSet, job, res_rqt: Tuple[int, int, Any], hy, min_start_time: int
+    session: Session, slots_set: SlotSet, job, res_rqt: Tuple[int, int, Any], hy, min_start_time: int
 ):
     """
     Loop through time slices from a :py:class:`oar.kao.slot.SlotSet` that are long enough for the job's walltime.
     For each compatible time slice, call the function :py:func:`find_resource_hierarchies_job`
     to find compatible resources allocation for the job, if such allocation is found the function ends.
 
+    :param Session session: The DB session
     :param SlotSet slots_set: Slot set of the current platform
     :param Job job: The job to schedule
     :param res_rqt: The job resource request
@@ -189,6 +192,7 @@ def find_first_suitable_contiguous_slots_quotas(
             )
             # Use specialized find resource function
             itvs = job.find_func(
+                session,
                 itvs_avail,
                 hy_res_rqts,
                 hy,
@@ -197,7 +201,7 @@ def find_first_suitable_contiguous_slots_quotas(
                 **job.find_kwargs,
             )
         else:
-            itvs = find_resource_hierarchies_job(itvs_avail, hy_res_rqts, hy)
+            itvs = find_resource_hierarchies_job(session, itvs_avail, hy_res_rqts, hy)
 
         if len(itvs) != 0:
             nb_res = len(itvs & ResourceSet.default_itvs)
@@ -226,13 +230,14 @@ def find_first_suitable_contiguous_slots_quotas(
 
 
 def find_first_suitable_contiguous_slots_no_quotas(
-    slots_set: SlotSet, job, res_rqt, hy, min_start_time: int
+    session: Session, slots_set: SlotSet, job, res_rqt, hy, min_start_time: int
 ):
     """
     Loop through time slices from a :py:class:`oar.kao.slot.SlotSet` that are long enough for the job's walltime.
     For each compatible time slice, call the function :py:func:`find_resource_hierarchies_job`
     to find compatible resources allocation for the job, if such allocation is found the function ends.
 
+    :param Session session: The DB session
     :param SlotSet slots_set: Slot set of the current platform
     :param Job job: The job to schedule
     :param res_rqt: The job resource request
@@ -276,6 +281,7 @@ def find_first_suitable_contiguous_slots_no_quotas(
 
         if job.find:
             itvs = job.find_func(
+                session,
                 itvs_avail,
                 hy_res_rqts,
                 hy,
@@ -285,7 +291,7 @@ def find_first_suitable_contiguous_slots_no_quotas(
                 **job.find_kwargs,
             )
         else:
-            itvs = find_resource_hierarchies_job(itvs_avail, hy_res_rqts, hy)
+            itvs = find_resource_hierarchies_job(session, itvs_avail, hy_res_rqts, hy)
 
         if len(itvs) != 0:
             break
@@ -306,13 +312,14 @@ def find_first_suitable_contiguous_slots_no_quotas(
 
 
 def find_first_suitable_contiguous_slots(
-    slots_set: SlotSet, job, res_rqt, hy, min_start_time: int
+    session: Session, slots_set: SlotSet, job, res_rqt, hy, min_start_time: int
 ):
     """
     Loop through time slices from a :py:class:`oar.kao.slot.SlotSet` that are long enough for the job's walltime.
     For each compatible time slice, call the function :py:func:`find_resource_hierarchies_job`
     to find compatible resources allocation for the job, if such allocation is found the function ends.
 
+    :param Session session: The DB session
     :param SlotSet slots_set: Slot set of the current platform
     :param Job job: The job to schedule
     :param res_rqt: The job resource request
@@ -322,16 +329,16 @@ def find_first_suitable_contiguous_slots(
 
     if Quotas.enabled and not job.no_quotas:
         return find_first_suitable_contiguous_slots_quotas(
-            slots_set, job, res_rqt, hy, min_start_time
+            session, slots_set, job, res_rqt, hy, min_start_time
         )
 
     return find_first_suitable_contiguous_slots_no_quotas(
-        slots_set, job, res_rqt, hy, min_start_time
+        session, slots_set, job, res_rqt, hy, min_start_time
     )
 
 
 def assign_resources_mld_job_split_slots(
-    slots_set: SlotSet, job: Job, hy, min_start_time
+    session: Session, slots_set: SlotSet, job: Job, hy, min_start_time
 ):
     """
     According to a resources a :class:`SlotSet` find the time and the resources to launch a job.
@@ -345,6 +352,7 @@ def assign_resources_mld_job_split_slots(
     .. note::
         This function can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param Session session: The DB session
     :param SlotSet slots_set: A :class:`SlotSet` of the current platform
     :param Job job: The job to schedule
     :param hy: \
@@ -362,7 +370,7 @@ def assign_resources_mld_job_split_slots(
     for res_rqt in job.mld_res_rqts:
         mld_id, walltime, hy_res_rqts = res_rqt
         res_set, sid_left, sid_right = find_first_suitable_contiguous_slots(
-            slots_set, job, res_rqt, hy, min_start_time
+            session, slots_set, job, res_rqt, hy, min_start_time
         )
         if len(res_set) == 0:  # no suitable time*resources found
             res_set_nfound += 1
@@ -403,11 +411,12 @@ def assign_resources_mld_job_split_slots(
     return prev_sid_left, prev_sid_right, job
 
 
-def schedule_id_jobs_ct(slots_sets, jobs, hy, id_jobs, job_security_time):
+def schedule_id_jobs_ct(session, slots_sets, jobs, hy, id_jobs, job_security_time):
     """
     Main scheduling loop with support for jobs container - can be recursive (recursion has not been tested)
     Find an allocation for each waiting jobs.
 
+    :param Session session: The DB session
     :param SlotSet slots_sets: A :class:`SlotSet` of the current platform
     :param [Job] jobs: The list of the waiting jobs to schedule
     :param hy: \
@@ -480,6 +489,7 @@ def schedule_id_jobs_ct(slots_sets, jobs, hy, id_jobs, job_security_time):
             if job.assign:
                 # Use specialized assign function
                 job.assign_func(
+                    session,
                     slots_set,
                     job,
                     hy,
@@ -488,7 +498,7 @@ def schedule_id_jobs_ct(slots_sets, jobs, hy, id_jobs, job_security_time):
                     **job.assign_kwargs,
                 )
             else:
-                assign_resources_mld_job_split_slots(slots_set, job, hy, min_start_time)
+                assign_resources_mld_job_split_slots(session, slots_set, job, hy, min_start_time)
 
             if "container" in job.types:
                 if job.types["container"] == "":

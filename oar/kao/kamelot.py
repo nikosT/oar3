@@ -95,6 +95,7 @@ def internal_schedule_cycle(
         # Scheduled
         #
         schedule_id_jobs_ct(
+            session,
             all_slot_sets,
             waiting_jobs,
             resource_set.hierarchy,
@@ -196,6 +197,7 @@ def schedule_cycle(
         # Scheduled
         #
         schedule_id_jobs_ct(
+            session,
             all_slot_sets,
             waiting_jobs,
             resource_set.hierarchy,
