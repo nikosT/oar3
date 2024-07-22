@@ -8,13 +8,14 @@ from oar.lib.hierarchy import find_resource_hierarchies_scattered
 logger = get_logger("oar.custom_scheduling")
 
 
-def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
+def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -22,6 +23,8 @@ def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
+    logger.info(session)
+
     result = ProcSet()
     for hy_res_rqt in hy_res_rqts:
         (hy_level_nbs, constraints) = hy_res_rqt
@@ -69,13 +72,14 @@ def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     return result
 
 
-def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
+def spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -140,13 +144,14 @@ def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     return result
 
 
-def co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def co_loc(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -154,16 +159,17 @@ def co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
-    return spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True)
+    return spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True)
 
 
-def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def no_pref(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -174,13 +180,14 @@ def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     return compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False)
 
 
-def f_compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
+def f_compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -200,13 +207,14 @@ def f_compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
         return avail_procset
 
 
-def f_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
+def f_spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request
@@ -226,13 +234,14 @@ def f_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
         return avail_procset
 
 
-def f_co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def f_co_loc(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
     .. note::
         This` can be override with the oar `extension <../admin/extensions.html#functions-assign-and-find>`_ mechanism.
 
+    :param session: The DB session
     :param itvs_slots: A procset of the resources available for the allocation
     :type itvs_slots: :class:`procset.ProcSet`
     :param hy_res_rqts: The job's request

@@ -77,7 +77,7 @@ def schedule_cycle(session, config, plt, queues=["default"]):
         # Scheduled
         #
         schedule_id_jobs_ct(
-            all_slot_sets, waiting_jobs, resource_set.hierarchy, waiting_jids, 0
+            session, all_slot_sets, waiting_jobs, resource_set.hierarchy, waiting_jids, 0
         )
 
         #

@@ -2,12 +2,13 @@
 from typing import Tuple
 
 from procset import ProcSet
+from sqlalchemy.orm import Session
 
 from oar.kao.slot import Slot, SlotSet, intersec_itvs_slots
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
 
 
-def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
+def find_resource_hierarchies_job(session, itvs_slots, hy_res_rqts, hy):
     """
     Find resources in interval for all resource subrequests of a moldable
     instance of a job
@@ -31,7 +32,7 @@ def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
 
 
 def find_first_suitable_contiguous_slots(
-    slots_set: SlotSet, job, res_rqt, hy
+    session: Session, slots_set: SlotSet, job, res_rqt, hy
 ) -> Tuple[ProcSet, int, int]:
     """find first_suitable_contiguous_slot"""
     (mld_id, walltime, hy_res_rqts) = res_rqt
@@ -48,7 +49,7 @@ def find_first_suitable_contiguous_slots(
     for slot_begin, slot_end in slots_set.traverse_with_width(walltime):
         # find next contiguous slots_time
         itvs_avail = intersec_itvs_slots(slots, slot_begin.id, slot_end.id)
-        itvs = find_resource_hierarchies_job(itvs_avail, hy_res_rqts, hy)
+        itvs = find_resource_hierarchies_job(session, itvs_avail, hy_res_rqts, hy)
 
         if len(itvs) != 0:
             break
@@ -59,7 +60,7 @@ def find_first_suitable_contiguous_slots(
     return (itvs, slot_begin.id, slot_end.id)
 
 
-def assign_resources_mld_job_split_slots(slots_set: SlotSet, job, hy):
+def assign_resources_mld_job_split_slots(session: Session, slots_set: SlotSet, job, hy):
     """
     According to a resources a :class:`SlotSet` find the time and the resources to launch a job.
     This function supports the moldable jobs. In case of multiple moldable job corresponding to the request
@@ -71,6 +72,7 @@ def assign_resources_mld_job_split_slots(slots_set: SlotSet, job, hy):
 
     One can replace this function using an extension of OAR.
 
+    :param Session session: The DB session
     :param ProcSet slots_set: A :class:`SlotSet` of the current platform
     :param [Job] job: The job to schedule
     :param hy: \
@@ -86,7 +88,7 @@ def assign_resources_mld_job_split_slots(slots_set: SlotSet, job, hy):
     for res_rqt in job.mld_res_rqts:
         (mld_id, walltime, hy_res_rqts) = res_rqt
         (res_set, sid_left, sid_right) = find_first_suitable_contiguous_slots(
-            slots_set, job, res_rqt, hy
+            session, slots_set, job, res_rqt, hy
         )
         # print("after find fisrt suitable")
         t_finish = slots[sid_left].b + walltime
@@ -113,7 +115,7 @@ def assign_resources_mld_job_split_slots(slots_set: SlotSet, job, hy):
     slots_set.split_slots(prev_sid_left, prev_sid_right, job)
 
 
-def schedule_id_jobs_ct(slots_sets, jobs, hy, id_jobs, security_time):
+def schedule_id_jobs_ct(session, slots_sets, jobs, hy, id_jobs, security_time):
     """
     Schedule loop with support for jobs container - can be recursive
     (recursivity has not be tested)
@@ -133,7 +135,7 @@ def schedule_id_jobs_ct(slots_sets, jobs, hy, id_jobs, security_time):
 
         # slots_set.show_slots()
 
-        assign_resources_mld_job_split_slots(slots_set, job, hy)
+        assign_resources_mld_job_split_slots(session, slots_set, job, hy)
 
         if "container" in job.types:
             Slot(
