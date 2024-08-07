@@ -65,7 +65,7 @@ class Slot(object):
         self.id = id
         self.prev = prev
         self.next = next
-        if type(itvs) is ProcSet:
+        if isinstance(itvs, ProcSet):
             self.itvs = itvs
         else:
             self.itvs = ProcSet(*itvs)
@@ -222,7 +222,7 @@ class SlotSet:
         """
         self.last_id: int = 1
         # The first (earlier) slot has identifier one.
-        if type(slots) is dict:
+        if isinstance(slots, dict):
             self.slots: Dict[int, Slot] = slots
             s = slots[1]
             self.begin: int = s.b
@@ -231,7 +231,7 @@ class SlotSet:
             self.last_id = s.id
             self.end: int = s.e
 
-        elif type(slots) is tuple:
+        elif isinstance(slots, tuple):
             itvs, b = slots
             self.begin: int = b
             self.slots: Dict[int, Slot] = {1: Slot(1, 0, 0, itvs, b, MAX_TIME)}

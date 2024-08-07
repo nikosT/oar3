@@ -25,7 +25,7 @@ except Exception:  # pragma: no cover
 def dict_ps_copy(dict_ps):
     d = {}
     for key, value in dict_ps.items():
-        if type(value) == dict:
+        if isinstance(value, dict):
             d[key] = {k: copy.copy(v) for k, v in value.items()}
         else:
             d[key] = value
