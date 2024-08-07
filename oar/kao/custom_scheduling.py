@@ -4,7 +4,6 @@ from procset import ProcSet
 
 from oar.lib.globals import get_logger
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
-from oar.lib.job_handling import get_jobs_in_state
 
 logger = get_logger("oar.custom_scheduling")
 
@@ -24,13 +23,13 @@ def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
-    #logger.info(session)
+    # logger.info(session)
 
-    #queryCollection = BaseQueryCollection(session)
-    #jobs=get_jobs_in_state(session,'Running')
-    #logger.info(jobs)
-    #res = queryCollection.get_assigned_jobs_resources(jobs)
-    #logger.info(res)
+    # queryCollection = BaseQueryCollection(session)
+    # jobs=get_jobs_in_state(session,'Running')
+    # logger.info(jobs)
+    # res = queryCollection.get_assigned_jobs_resources(jobs)
+    # logger.info(res)
 
     result = ProcSet()
     for hy_res_rqt in hy_res_rqts:
