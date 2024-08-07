@@ -223,7 +223,7 @@ def print_jobs(
             if job.id in jobs_types:
                 types = []
                 for job_type, value in jobs_types[job.id].items():
-                    if type(value) == bool:
+                    if isinstance(value, bool):
                         types.append(f"{job_type}")
                     else:
                         types.append(f"{job_type}={value}")
