@@ -1,7 +1,6 @@
 import itertools
 
 from procset import ProcSet
-from oar.lib.basequery import BaseQueryCollection
 
 from oar.lib.globals import get_logger
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
@@ -10,7 +9,7 @@ from oar.lib.job_handling import get_jobs_in_state
 logger = get_logger("oar.custom_scheduling")
 
 
-def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
+def compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -80,7 +79,7 @@ def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Tru
     return result
 
 
-def spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
+def spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -152,7 +151,7 @@ def spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Fals
     return result
 
 
-def co_loc(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -167,10 +166,10 @@ def co_loc(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
-    return spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True)
+    return spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True)
 
 
-def no_pref(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def no_pref(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -188,7 +187,7 @@ def no_pref(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
     return compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False)
 
 
-def f_compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
+def f_compact(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -215,7 +214,7 @@ def f_compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=T
         return avail_procset
 
 
-def f_spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
+def f_spread(itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=False):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -242,7 +241,7 @@ def f_spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Fa
         return avail_procset
 
 
-def f_co_loc(session, itvs_slots, hy_res_rqts, hy, beginning_slotset):
+def f_co_loc(itvs_slots, hy_res_rqts, hy, beginning_slotset):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
