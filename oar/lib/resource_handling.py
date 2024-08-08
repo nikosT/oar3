@@ -534,11 +534,18 @@ def resources_creation(
     nb_cpu: int = 1,
     vfactor: int = 1,
 ):
-    for i in range(nb_nodes * nb_core * vfactor):
+
+    # this design is for Grenoble - Dahu cpuset mapping
+    cpuset_list = list(
+        set(list(map(lambda x: x % nb_core, range(nb_nodes * nb_core * vfactor))))
+    )
+    cpuset_order = sorted(cpuset_list, key=lambda x: (x % 2, x)) * nb_nodes
+
+    for i, co in enumerate(cpuset_order):
         Resource.create(
             session,
             network_address=f"{node_name}{int(i/(nb_core * vfactor)+1)}",
-            cpuset=i % nb_core,
+            cpuset=co,
             core=i + 1,
             cpu=i // (nb_core // nb_cpu) + 1,
             state="Alive",
