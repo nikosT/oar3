@@ -96,6 +96,7 @@ def find_resource_hierarchies_job(itvs_slots, hy_res_rqts, hy):
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
+    logger.info("hy_res_rqt: {}, itvs_slots: {}".format(hy_res_rqts, itvs_slots))
     result = ProcSet()
     for hy_res_rqt in hy_res_rqts:
         (hy_level_nbs, constraints) = hy_res_rqt
