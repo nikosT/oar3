@@ -545,7 +545,7 @@ def resources_creation(
         Resource.create(
             session,
             network_address=f"{node_name}{int(i/(nb_core * vfactor)+1)}",
-            cpuset=co,
+            cpuset=co % 16,
             core=i + 1,
             cpu=i // (nb_core // nb_cpu) + 1,
             state="Alive",
