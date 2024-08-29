@@ -2,13 +2,64 @@ import itertools
 
 from procset import ProcSet
 
-from oar.lib.globals import get_logger
+from oar.lib.globals import get_logger, init_oar
 from oar.lib.hierarchy import find_resource_hierarchies_scattered
+from sqlalchemy import func, case, desc, asc
+from sqlalchemy.orm import Session
+from oar.lib.models import (
+    AssignedResource,
+    EventLog,
+    FragJob,
+    Job,
+    JobType,
+    MoldableJobDescription,
+    Resource,
+    ResourceLog
+)
+from oar.lib.resource import ResourceSet
 
 logger = get_logger("oar.custom_scheduling")
 
 
-def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True):
+def get_nodes_characterization(session: Session):
+    # Subquery to calculate the appearance count and assign a row number per network_address
+    subquery = (
+        session.query(
+            Resource.network_address,
+            JobType.type,
+            func.count(AssignedResource.resource_id).label('appearance_count'),
+            func.row_number().over(
+                partition_by=Resource.network_address,
+                order_by=[
+                    desc(func.count(AssignedResource.resource_id)),
+                    case(
+                        (JobType.type == 'unfriendly', 1),
+                        (JobType.type == 'friendly', 2),
+                        else_=3
+                    )
+                ]
+            ).label('rn')
+        )
+        .join(Job, Job.id == JobType.job_id)
+        .join(AssignedResource, Job.assigned_moldable_job == AssignedResource.moldable_id)
+        .join(Resource, AssignedResource.resource_id == Resource.id)
+        .filter(Job.state.in_(("toLaunch", "Running", "Resuming", "Terminated")))
+        .group_by(Resource.network_address, JobType.type)
+        .subquery()
+    )
+
+    # Main query to get only the rows with rn = 1 (max appearance count per network_address)
+    results = (
+        session.query(subquery.c.network_address, subquery.c.type, subquery.c.appearance_count)
+        .filter(subquery.c.rn == 1)
+        .order_by(asc(subquery.c.network_address))
+        .all()
+    )
+
+    return results
+
+
+def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=True, allocation=(1, 3, 2)):
     """
     Given a job resource request and a set of resources this function tries to find a matching allocation.
 
@@ -23,13 +74,37 @@ def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Tru
     :return [ProcSet]: \
             The allocation if found, otherwise an empty :class:`procset.ProcSet`
     """
-    # logger.info(session)
+    # import time
+    # start_time = time.time()
 
-    # queryCollection = BaseQueryCollection(session)
-    # jobs=get_jobs_in_state(session,'Running')
-    # logger.info(jobs)
-    # res = queryCollection.get_assigned_jobs_resources(jobs)
-    # logger.info(res)
+    logger.info(__file__)
+    config, db = init_oar(no_db=False)
+    chars = get_nodes_characterization(session)
+
+    rs = ResourceSet(session, config)
+
+    nodes = {}
+    list(map(lambda x: nodes.setdefault(x[1], []).append(x[0]), rs.roid_2_network_address.items()))
+
+    nodes = {k: ProcSet(*v) for k, v in nodes.items()}
+
+    agg = []
+    for network_address in nodes.keys():
+        _found = list(filter(lambda x: x[0] == network_address, chars))
+        if _found:
+            char = (
+                allocation[0] if _found[0][1] == 'unfriendly' 
+                else allocation[1] if _found[0][1] == 'friendly'
+                else allocation[2]
+            )
+        else:
+            char = 3
+
+        agg.append((nodes[network_address], char))
+
+    # end_time = time.time()
+    # elapsed_time = end_time - start_time
+    # logger.info(f"Function execution time: {elapsed_time:.4f} seconds")
 
     result = ProcSet()
     for hy_res_rqt in hy_res_rqts:
@@ -43,12 +118,15 @@ def compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Tru
 
         itvs_cts_slots = constraints & itvs_slots
 
-        # create a nodes Procset list sorted by min/max free cores
-        hy_nodes = sorted(
-            hy["network_address"],
-            key=lambda i: len(i & itvs_cts_slots),
-            reverse=reverse,
+        sorted_agg = sorted(
+            agg,
+            key=lambda x: (len(x[0] & itvs_cts_slots), x[1]),
+            reverse=reverse
         )
+
+        logger.info(sorted_agg)
+
+        hy_nodes = list(map(lambda x: x[0],sorted_agg))
 
         hy_levels = []
         for node in hy_nodes:
