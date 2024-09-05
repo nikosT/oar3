@@ -131,6 +131,8 @@ requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry.plugins."oar.find_func"]
+e_compact = "oar.kao.custom_scheduling:e_compact"
+e_spread = "oar.kao.custom_scheduling:e_spread"
 compact = "oar.kao.custom_scheduling:compact"
 spread = "oar.kao.custom_scheduling:spread"
 co_loc = "oar.kao.custom_scheduling:co_loc"
