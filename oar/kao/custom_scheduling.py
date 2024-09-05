@@ -77,7 +77,7 @@ def e_compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=T
     # import time
     # start_time = time.time()
 
-    logger.info(__file__)
+    logger.debug(__file__)
     config, db = init_oar(no_db=False)
     chars = get_nodes_characterization(session)
 
@@ -124,7 +124,7 @@ def e_compact(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=T
             reverse=reverse
         )
 
-        logger.info(sorted_agg)
+        logger.debug(sorted_agg)
 
         hy_nodes = list(map(lambda x: x[0],sorted_agg))
 
@@ -189,7 +189,7 @@ def e_spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Tr
             avail_cores = soc & itvs_cts_slots
             itvs_cts_slots -= ProcSet(*avail_cores[int(len(soc) / 2) : len(soc)])
 
-        logger.info(__file__)
+        logger.debug(__file__)
         config, db = init_oar(no_db=False)
         chars = get_nodes_characterization(session)
 
@@ -223,7 +223,7 @@ def e_spread(session, itvs_slots, hy_res_rqts, hy, beginning_slotset, reverse=Tr
                 reverse=reverse
             )
 
-            logger.info(sorted_agg)
+            logger.debug(sorted_agg)
 
             hy_nodes = list(map(lambda x: x[0],sorted_agg))
 
